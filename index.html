@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05080f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Insel">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Insel der vier Siegel</title>
+<style>
+  :root {
+    --gold: #e2b04a;
+    --marmor: #f3ecdc;
+    --glas: rgba(8, 13, 26, 0.58);
+    --linie: rgba(255, 255, 255, 0.16);
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --oben: max(10px, env(safe-area-inset-top));
+    --unten: max(12px, env(safe-area-inset-bottom));
+    --links: max(14px, env(safe-area-inset-left));
+    --rechts: max(14px, env(safe-area-inset-right));
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; inset: 0; background: #05080f; color: var(--marmor); font-family: var(--sans); }
+  button { font-family: inherit; color: inherit; cursor: pointer; }
+  #welt { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #steuerflaeche { position: fixed; inset: 0; z-index: 1; }
+
+  /* Bildschirmränder */
+  #kino { position: fixed; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45) 100%); }
+  #gefahr { position: fixed; inset: 0; z-index: 2; pointer-events: none; transition: box-shadow 0.25s; }
+
+  /* HUD */
+  #hud { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+  #hud button { pointer-events: auto; }
+  #status { position: absolute; top: var(--oben); left: var(--links); width: 168px; }
+  #uhr { font-family: var(--serif); font-size: 17px; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); }
+  #sturm { font-size: 12px; color: #c9d4ea; margin: 1px 0 7px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+  #sturm.warn { color: #ff7a72; font-weight: 600; }
+  .wert { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .wert span { width: 18px; text-align: center; font-size: 13px; }
+  .leiste { flex: 1; height: 7px; border-radius: 4px; background: rgba(0, 0, 0, 0.45); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+  .leiste i { display: block; height: 100%; width: 100%; transition: width 0.3s; }
+  #lWasser { background: linear-gradient(90deg, #2b7fbf, #5cc0f0); }
+  #lFackel { background: linear-gradient(90deg, #c4561d, #f3a446); }
+  #lMut { background: linear-gradient(90deg, #a7333a, #e2686b); }
+  #siegelLeiste { display: flex; gap: 6px; margin-top: 4px; }
+  #siegelLeiste b { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 400; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--linie); filter: grayscale(1) brightness(0.55); transition: all 0.5s; }
+  #siegelLeiste b.da { filter: none; border-color: var(--gold); box-shadow: 0 0 10px rgba(226, 176, 74, 0.7); }
+
+  #kompass { position: absolute; top: calc(var(--oben) + 2px); left: 50%; transform: translateX(-50%); width: min(40vw, 360px); height: 30px; overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+  #kompass::after { content: ""; position: absolute; left: 50%; top: 0; width: 2px; height: 7px; background: var(--gold); transform: translateX(-1px); }
+  .km { position: absolute; top: 9px; transform: translateX(-50%); font-size: 13px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); white-space: nowrap; }
+  .km.richtung { font-family: var(--serif); font-size: 14px; color: #e9e2d0; }
+  .km.haupt { color: var(--gold); font-weight: 600; }
+  .km.ziel { font-size: 16px; top: 7px; }
+
+  #karteRahmen { position: absolute; top: var(--oben); right: var(--rechts); width: 108px; height: 108px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(226, 176, 74, 0.7); box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5); background: #0b1220; }
+  #minikarte { width: 100%; height: 100%; display: block; }
+  #menueKnopf { position: absolute; top: calc(var(--oben) + 4px); right: calc(var(--rechts) + 118px); width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--linie); background: var(--glas); font-size: 17px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+
+  #fackelKnopf { position: absolute; right: calc(var(--rechts) + 4px); bottom: calc(var(--unten) + 6px); width: 70px; height: 70px; border-radius: 50%; border: 1px solid var(--linie); background: var(--glas); font-size: 28px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  #fackelKnopf.an { border-color: #f3a446; box-shadow: 0 0 18px rgba(243, 164, 70, 0.6); background: rgba(70, 32, 10, 0.7); }
+  #aktionKnopf { position: absolute; right: calc(var(--rechts) + 84px); bottom: calc(var(--unten) + 18px); padding: 14px 20px; border-radius: 30px; border: 1px solid var(--gold); background: rgba(40, 28, 8, 0.78); font-size: 16px; font-weight: 600; color: #ffe2a4; box-shadow: 0 0 16px rgba(226, 176, 74, 0.45); animation: puls 1.6s ease-in-out infinite; }
+  @keyframes puls { 50% { box-shadow: 0 0 26px rgba(226, 176, 74, 0.8); } }
+
+  #meldungen { position: absolute; left: 50%; bottom: calc(var(--unten) + 8px); transform: translateX(-50%); width: min(54vw, 470px); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .meldung { font-family: var(--serif); font-size: 14.5px; line-height: 1.3; text-align: center; padding: 7px 14px; border-radius: 12px; background: rgba(5, 9, 18, 0.62); text-shadow: 0 1px 2px #000; animation: meldung 6s forwards; }
+  .meldung.hinweis { color: #ffd88a; }
+  .meldung.gefahr { color: #ff9b94; }
+  .meldung.gut { color: #b7e6a4; }
+  @keyframes meldung { 0% { opacity: 0; transform: translateY(8px); } 6% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+  #joystick { position: fixed; z-index: 3; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.06); pointer-events: none; }
+  #knauf { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: rgba(243, 236, 220, 0.5); box-shadow: 0 0 10px rgba(0, 0, 0, 0.4); }
+  #knauf.rennt { background: rgba(243, 164, 70, 0.75); }
+  #steuerHinweis { position: absolute; left: 50%; top: calc(var(--oben) + 40px); transform: translateX(-50%); font-size: 13px; color: rgba(255, 255, 255, 0.7); text-align: center; text-shadow: 0 1px 3px #000; transition: opacity 1s; }
+
+  /* Ebenen über dem Spiel */
+  .ebene { position: fixed; inset: 0; z-index: 10; }
+  #titel { display: flex; flex-direction: column; justify-content: center; padding: var(--oben) var(--rechts) var(--unten) calc(var(--links) + 10px);
+    background: linear-gradient(90deg, rgba(4, 7, 16, 0.86) 0%, rgba(4, 7, 16, 0.55) 45%, rgba(4, 7, 16, 0) 75%); }
+  #titel .inhalt { max-width: 420px; }
+  #titel h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(34px, 7vmin, 56px); line-height: 1.02; margin: 0 0 12px; }
+  #titel h1 em { display: block; color: var(--gold); }
+  #titel p { font-family: var(--serif); font-size: 16px; line-height: 1.45; margin: 0 0 10px; color: #ded6c2; }
+  #titel .klein { font-family: var(--sans); font-size: 13px; color: #a3aec6; }
+  .gross { display: block; width: 100%; max-width: 320px; padding: 14px 16px; margin-top: 10px; font-size: 17px; border-radius: 14px; border: 1px solid var(--gold); background: var(--gold); color: #1d1405; font-weight: 600; }
+  .gross.leise { background: rgba(0, 0, 0, 0.35); color: var(--marmor); border-color: var(--linie); font-weight: 400; }
+  #laden { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: #05080f; font-family: var(--serif); font-size: 18px; color: #c9c0aa; }
+
+  #modal, #menue { display: none; align-items: flex-end; justify-content: center; background: rgba(3, 6, 14, 0.62); }
+  #modal.offen, #menue.offen { display: flex; }
+  .platte { width: min(100%, 580px); max-height: 90%; overflow-y: auto; touch-action: pan-y; background: rgba(16, 26, 50, 0.96); border-top: 2px solid var(--gold); border-radius: 22px 22px 0 0; padding: 18px 18px var(--unten); animation: hoch 0.22s ease-out; }
+  @keyframes hoch { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .platte h2 { font-family: var(--serif); font-weight: 400; font-size: 22px; margin: 0 0 6px; color: var(--gold); }
+  .platte p { font-family: var(--serif); font-size: 17px; line-height: 1.45; margin: 0 0 6px; }
+  .wahl { display: block; width: 100%; margin-top: 8px; padding: 13px 14px; text-align: left; font-size: 16px; border-radius: 12px; border: 1px solid #3a5592; background: #1d3060; touch-action: manipulation; }
+  .wahl:active { background: #2b4584; }
+  .wahl:disabled { opacity: 0.38; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+  .chip { padding: 4px 10px; border-radius: 99px; font-size: 13px; background: #233866; }
+  .chip.plus { background: #234a2c; color: #b5e6a3; }
+  .chip.minus { background: #5a2025; color: #f6b2b0; }
+  .symbole { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0 4px; }
+  .symbole button { width: 60px; height: 60px; font-size: 29px; border-radius: 14px; border: 1px solid #3a5592; background: #1d3060; touch-action: manipulation; }
+  #blitz { height: 100px; display: grid; place-items: center; font-size: 70px; }
+  .folge { text-align: center; font-size: 26px; letter-spacing: 6px; min-height: 34px; }
+  #tagebuch { font-family: var(--serif); font-size: 14px; color: #b9c2d6; margin-top: 10px; max-height: 120px; overflow-y: auto; touch-action: pan-y; }
+  #tagebuch div { margin-bottom: 4px; }
+
+  #ende { display: flex; flex-direction: column; justify-content: center; padding: var(--oben) var(--rechts) var(--unten) calc(var(--links) + 10px); background: rgba(4, 7, 16, 0.82); }
+  #ende h1 { font-family: var(--serif); font-weight: 400; font-size: 38px; margin: 0 0 10px; color: var(--gold); }
+  #ende p { font-family: var(--serif); font-size: 17px; line-height: 1.45; max-width: 520px; margin: 0 0 10px; }
+  #ende .klein { font-family: var(--sans); font-size: 13px; color: #a3aec6; }
+  @media (orientation: portrait) {
+    #kompass { top: calc(var(--oben) + 122px); width: 74vw; }
+    #meldungen { width: 64vw; bottom: calc(var(--unten) + 96px); }
+    #steuerHinweis { top: calc(var(--oben) + 160px); width: 80vw; }
+  }
+  @media (prefers-reduced-motion: reduce) { .platte, .meldung, #aktionKnopf { animation: none; } .meldung { opacity: 1; } }
+</style>
+</head>
+<body>
+<canvas id="welt"></canvas>
+<div id="steuerflaeche"></div>
+<div id="kino"></div>
+<div id="gefahr"></div>
+
+<div id="hud" hidden>
+  <div id="status">
+    <div id="uhr">Tag 1, 07:00</div>
+    <div id="sturm">Sturm in 59 Std.</div>
+    <div class="wert"><span>💧</span><div class="leiste"><i id="lWasser"></i></div></div>
+    <div class="wert"><span>🔥</span><div class="leiste"><i id="lFackel"></i></div></div>
+    <div class="wert"><span>❤️</span><div class="leiste"><i id="lMut"></i></div></div>
+    <div id="siegelLeiste"></div>
+  </div>
+  <div id="kompass"></div>
+  <button id="menueKnopf" aria-label="Menü">☰</button>
+  <div id="karteRahmen"><canvas id="minikarte" width="216" height="216"></canvas></div>
+  <div id="meldungen"></div>
+  <div id="steuerHinweis">Links ziehen zum Laufen, rechts wischen zum Umsehen</div>
+  <button id="aktionKnopf" hidden>Untersuchen</button>
+  <button id="fackelKnopf" aria-label="Fackel">🔥</button>
+</div>
+<div id="joystick" hidden><div id="knauf"></div></div>
+
+<div id="titel" class="ebene">
+  <div class="inhalt">
+    <h1>Insel der <em>vier Siegel</em></h1>
+    <p>Dein Schiff ist zerschellt. Auf dem Plateau in der Inselmitte steht das Tor des Orakels. Es öffnet sich nur mit vier Siegeln.</p>
+    <p>Nachts jagen Schatten jedes Licht. Am dritten Abend bricht der Sturm los.</p>
+    <p class="klein">Am besten im Querformat und mit Kopfhörern. Läuft ohne Internet.</p>
+    <button class="gross" id="knopfNeu">Neues Spiel</button>
+    <button class="gross leise" id="knopfWeiter" hidden>Spiel fortsetzen</button>
+  </div>
+</div>
+
+<div id="menue" class="ebene">
+  <div class="platte">
+    <h2>Pause</h2>
+    <button class="wahl" id="mWeiter">Weiterspielen</button>
+    <button class="wahl" id="mRasten">Rasten (1,5 Stunden, Mut +10)</button>
+    <button class="wahl" id="mTon">Ton ausschalten</button>
+    <button class="wahl" id="mTitel">Speichern und zum Hauptmenü</button>
+    <div id="tagebuch"></div>
+  </div>
+</div>
+
+<div id="modal" class="ebene">
+  <div class="platte">
+    <h2 id="modalTitel"></h2>
+    <p id="modalText"></p>
+    <div id="modalInhalt"></div>
+    <div id="modalOptionen"></div>
+  </div>
+</div>
+
+<div id="ende" class="ebene" hidden>
+  <h1 id="endeTitel"></h1>
+  <p id="endeText"></p>
+  <p class="klein" id="endeWerte"></p>
+  <button class="gross" id="knopfNochmal">Gleiche Insel nochmal</button>
+  <button class="gross leise" id="knopfAndere">Neue Insel</button>
+</div>
+
+<div id="laden">Die Insel taucht aus dem Nebel auf …</div>
+
+<script type="module">
+import * as THREE from './three.module.min.js';
+
+/* ============================================================
+   Grundwerte
+   ============================================================ */
+const WELT = 240;                 // Kantenlänge der Insel in Metern
+const HALB = WELT / 2;
+const RASTER = 161;               // Punkte pro Seite im Höhenraster
+const ZELLE = WELT / (RASTER - 1);
+const SEK_PRO_STUNDE = 20;        // Echtzeit-Sekunden pro Spielstunde
+const START_STUNDE = 7;           // Tag 1, 07:00
+const STURM_STUNDE = 66;          // Tag 3, 18:00
+const GEHEN = 4.3, RENNEN = 7.2;  // Meter pro Sekunde
+const AUGENHOEHE = 1.7;
+const SICHER_RADIUS = 9;
+const KARTE_N = 80;               // Raster für entdeckte Gebiete
+const SPEICHER = 'inselDerVierSiegel_3d_v1';
+const EMPFINDLICHKEIT = 0.0048;
+
+const SICHER = ['lager', 'dorf', 'quelle', 'tempel', 'tor'];
+const SIEGEL_ORTE = ['tempel', 'hoehle', 'ruine', 'gipfel'];
+const SIEGEL_NAME = { tempel: 'weisheit', hoehle: 'tapferkeit', ruine: 'erinnerung', gipfel: 'himmel' };
+const SIEGEL_INFO = {
+  weisheit:   { symbol: '🦉', name: 'Siegel der Weisheit' },
+  tapferkeit: { symbol: '🦁', name: 'Siegel der Tapferkeit' },
+  erinnerung: { symbol: '🌊', name: 'Siegel der Erinnerung' },
+  himmel:     { symbol: '⚡', name: 'Siegel des Himmels' }
+};
+const ORTE = {
+  tor:    { symbol: '🔱', name: 'das Tor des Orakels', aktion: 'Tor untersuchen', radius: 10 },
+  tempel: { symbol: '🏛️', name: 'ein Tempel', aktion: 'Tempel betreten', radius: 9 },
+  hoehle: { symbol: '🕳️', name: 'ein Höhleneingang', aktion: 'Höhle betreten', radius: 9 },
+  ruine:  { symbol: '🏺', name: 'eine Ruine', aktion: 'Ruine untersuchen', radius: 7 },
+  gipfel: { symbol: '🏔️', name: 'der höchste Gipfel', aktion: 'Siegel holen', radius: 6 },
+  quelle: { symbol: '💧', name: 'eine Quelle', aktion: 'Trinken', radius: 5 },
+  lager:  { symbol: '⛺', name: 'ein altes Lager', aktion: 'Lager betreten', radius: 7 },
+  dorf:   { symbol: '🏘️', name: 'ein verlassenes Dorf', aktion: 'Dorf erkunden', radius: 12 },
+  wrack:  { symbol: '⚓', name: 'ein Schiffswrack', aktion: 'Wrack durchsuchen', radius: 8 }
+};
+
+/* ============================================================
+   Helfer
+   ============================================================ */
+const el = id => document.getElementById(id);
+const klemme = (w, a, b) => Math.max(a, Math.min(b, w));
+const glatt = (a, b, w) => { const t = klemme((w - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const zufallswahl = l => l[Math.floor(Math.random() * l.length)];
+const farbe = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
+const hex = h => new THREE.Color(h);
+function mische(l) { const k = l.slice(); for (let i = k.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [k[i], k[j]] = [k[j], k[i]]; } return k; }
+function winkelNorm(a) { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; }
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function rauschen(zuf, groesse, skala) {
+  const g = Math.ceil(groesse / skala) + 2;
+  const gitter = [];
+  for (let y = 0; y < g; y++) { gitter[y] = []; for (let x = 0; x < g; x++) gitter[y][x] = zuf(); }
+  return (x, y) => {
+    const gx = x / skala, gy = y / skala;
+    const x0 = Math.floor(gx), y0 = Math.floor(gy);
+    const fx = gx - x0, fy = gy - y0;
+    const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    const a = gitter[y0][x0], b = gitter[y0][x0 + 1], c = gitter[y0 + 1][x0], d = gitter[y0 + 1][x0 + 1];
+    return (a + (b - a) * sx) * (1 - sy) + (c + (d - c) * sx) * sy;
+  };
+}
+
+// Höhe an einer beliebigen Weltposition (zwischen Rasterpunkten weich gemittelt)
+function rasterWert(feld, x, wz) {
+  const n = RASTER;
+  const gx = klemme((x + HALB) / ZELLE, 0, n - 1.001);
+  const gz = klemme((wz + HALB) / ZELLE, 0, n - 1.001);
+  const i = Math.floor(gx), j = Math.floor(gz), fx = gx - i, fz = gz - j;
+  const a = feld[j * n + i], b = feld[j * n + i + 1], c = feld[(j + 1) * n + i], d = feld[(j + 1) * n + i + 1];
+  return (a + (b - a) * fx) * (1 - fz) + (c + (d - c) * fx) * fz;
+}
+function steigungAus(feld, x, wz) {
+  const hx = rasterWert(feld, x + 1, wz) - rasterWert(feld, x - 1, wz);
+  const hz = rasterWert(feld, x, wz + 1) - rasterWert(feld, x, wz - 1);
+  return Math.hypot(hx, hz) / 2;
+}
+const hoeheBei = (x, wz) => rasterWert(W.hoehe, x, wz);
+
+function himmelsrichtung(dx, dz) {
+  const namen = ['Norden', 'Nordosten', 'Osten', 'Südosten', 'Süden', 'Südwesten', 'Westen', 'Nordwesten'];
+  const w = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360;
+  return namen[Math.round(w / 45) % 8];
+}
+
+/* ============================================================
+   Ton (wird live erzeugt)
+   ============================================================ */
+let audio = null, tonAn = true, windGain = null, rauschPuffer = null;
+
+function audioStarten() {
+  if (audio) { if (audio.state !== 'running') audio.resume(); return; }
+  try {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    const laenge = audio.sampleRate * 2;
+    const braun = audio.createBuffer(1, laenge, audio.sampleRate);
+    const d = braun.getChannelData(0);
+    let letzter = 0;
+    for (let i = 0; i < laenge; i++) { letzter = (letzter + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = letzter * 3.5; }
+    const quelle = audio.createBufferSource();
+    quelle.buffer = braun; quelle.loop = true;
+    const filter = audio.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 450;
+    windGain = audio.createGain(); windGain.gain.value = 0.05;
+    quelle.connect(filter); filter.connect(windGain); windGain.connect(audio.destination);
+    quelle.start();
+    rauschPuffer = audio.createBuffer(1, audio.sampleRate * 0.25, audio.sampleRate);
+    const r = rauschPuffer.getChannelData(0);
+    for (let i = 0; i < r.length; i++) r[i] = Math.random() * 2 - 1;
+  } catch (e) { audio = null; }
+}
+function ton(frequenz, dauer, typ, laut, verz) {
+  if (!audio || !tonAn) return;
+  if (audio.state !== 'running') audio.resume();
+  const start = audio.currentTime + (verz || 0);
+  const o = audio.createOscillator(), g = audio.createGain();
+  o.type = typ || 'sine'; o.frequency.value = frequenz;
+  g.gain.setValueAtTime(laut || 0.1, start);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + dauer);
+  o.connect(g); g.connect(audio.destination); o.start(start); o.stop(start + dauer);
+}
+function schrittTon(nass) {
+  if (!audio || !tonAn || !rauschPuffer) return;
+  const q = audio.createBufferSource(); q.buffer = rauschPuffer;
+  const f = audio.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = nass ? 1300 : 320 + Math.random() * 160; f.Q.value = 1.2;
+  const g = audio.createGain(); const t = audio.currentTime;
+  g.gain.setValueAtTime(nass ? 0.18 : 0.22, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+  q.connect(f); f.connect(g); g.connect(audio.destination); q.start(t); q.stop(t + 0.15);
+}
+const herzschlag = () => { ton(56, 0.14, 'sine', 0.45); ton(48, 0.16, 'sine', 0.33, 0.16); };
+const siegelTon = () => [523, 659, 784, 1047].forEach((f, i) => ton(f, 0.6, 'triangle', 0.12, i * 0.12));
+const gefahrTon = () => { ton(110, 0.6, 'sawtooth', 0.07); ton(117, 0.6, 'sawtooth', 0.07); };
+const kleinerTon = gut => ton(gut ? 660 : 180, 0.25, 'triangle', 0.08);
+
+/* ============================================================
+   Welt-Daten erzeugen (nur Zahlen, noch kein 3D)
+   ============================================================ */
+function erzeugeDaten(seed) {
+  for (let v = 0; v < 40; v++) { const d = versucheDaten(seed + v * 7919); if (d) return d; }
+  throw new Error('Keine Insel gefunden');
+}
+
+function versucheDaten(seed) {
+  const zuf = mulberry32(seed);
+  const n = RASTER;
+  const r1 = rauschen(zuf, n, 40), r2 = rauschen(zuf, n, 16), r3 = rauschen(zuf, n, 6), rw = rauschen(zuf, n, 20);
+  const hoehe = new Float32Array(n * n), wald = new Float32Array(n * n);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const u = i / (n - 1) * 2 - 1, v = j / (n - 1) * 2 - 1;
+    const d = Math.sqrt(u * u + v * v);
+    const b = 1.0 - d * 1.2 + (r1(i, j) - 0.5) * 0.6 + (r2(i, j) - 0.5) * 0.25 + (r3(i, j) - 0.5) * 0.07;
+    let h = b > 0 ? Math.pow(b, 1.35) * 34 : b * 18;
+    // Sanftes Plateau in der Mitte für das Tor
+    const m = Math.hypot(u, v) * HALB;
+    const w = 1 - glatt(14, 40, m);
+    h = h * (1 - w) + 12 * w;
+    hoehe[j * n + i] = h;
+    wald[j * n + i] = rw(i, j);
+  }
+  const mitte = (n - 1) / 2;
+  if (hoehe[mitte * n + mitte] < 4) return null;
+
+  // Welche Felder sind zu Fuss von der Mitte aus erreichbar?
+  const erreichbar = new Uint8Array(n * n);
+  const stapel = [mitte * n + mitte]; erreichbar[mitte * n + mitte] = 1;
+  while (stapel.length) {
+    const k = stapel.pop(); const i = k % n, j = (k - i) / n;
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([di, dj]) => {
+      const ni = i + di, nj = j + dj;
+      if (ni < 0 || nj < 0 || ni >= n || nj >= n) return;
+      const nk = nj * n + ni;
+      if (erreichbar[nk] || hoehe[nk] < -0.3) return;
+      erreichbar[nk] = 1; stapel.push(nk);
+    });
+  }
+  const land = [];
+  for (let k = 0; k < n * n; k++) {
+    if (!erreichbar[k] || hoehe[k] < 0.4) continue;
+    const x = (k % n) * ZELLE - HALB, wz = Math.floor(k / n) * ZELLE - HALB;
+    land.push({ x, z: wz, h: hoehe[k], s: steigungAus(hoehe, x, wz) });
+  }
+  if (land.length < n * n * 0.18) return null;
+
+  const pois = [];
+  const frei = (c, min) => pois.every(p => Math.hypot(p.x - c.x, p.z - c.z) >= min);
+  const neu = (art, c) => ({ art, x: c.x, z: c.z, erledigt: false, bekannt: false, hinweis: false, durchsucht: false, gesprochen: false });
+
+  pois.push(Object.assign(neu('tor', { x: 0, z: 0 }), { bekannt: true }));
+
+  let gipfel = null;
+  land.forEach(c => { if (Math.hypot(c.x, c.z) < 45) return; if (!gipfel || c.h > gipfel.h) gipfel = c; });
+  if (!gipfel || gipfel.h < 14) return null;
+  pois.push(neu('gipfel', gipfel));
+
+  // Die anderen drei Siegelorte liegen in den übrigen Himmelsrichtungen
+  const a0 = Math.atan2(gipfel.z, gipfel.x);
+  const andere = ['tempel', 'hoehle', 'ruine'];
+  for (let i = 0; i < 3; i++) {
+    const w = a0 + (i + 1) * Math.PI / 2 + (zuf() - 0.5) * 0.5;
+    const r = HALB * (0.36 + zuf() * 0.24);
+    const zx = Math.cos(w) * r, zz = Math.sin(w) * r;
+    let beste = null, bd = 1e9;
+    land.forEach(c => {
+      if (c.h < 2.5 || c.h > 22 || c.s > 0.6) return;
+      if (Math.hypot(c.x, c.z) < 42 || !frei(c, 32)) return;
+      const d = Math.hypot(c.x - zx, c.z - zz);
+      if (d < bd) { bd = d; beste = c; }
+    });
+    if (!beste) return null;
+    pois.push(neu(andere[i], beste));
+  }
+  const streue = (art, anzahl, filter, min) => {
+    let gesetzt = 0, v = 0;
+    while (gesetzt < anzahl && v < 4000) {
+      v++;
+      const c = land[Math.floor(zuf() * land.length)];
+      if (!filter(c) || !frei(c, min)) continue;
+      pois.push(neu(art, c)); gesetzt++;
+    }
+  };
+  const mild = c => c.h > 2 && c.h < 16 && c.s < 0.45;
+  streue('quelle', 3, mild, 24);
+  streue('lager', 3, mild, 24);
+  streue('dorf', 1, c => mild(c) && c.s < 0.3, 30);
+  streue('wrack', 2, c => c.h > 0.4 && c.h < 1.3, 24);
+  if (!pois.some(p => p.art === 'dorf')) return null;
+
+  // Bauplätze ebnen
+  const FLACH = { tor: 13, tempel: 10, dorf: 15, lager: 6, quelle: 5, ruine: 8, gipfel: 3 };
+  pois.forEach(p => {
+    const r = FLACH[p.art]; if (!r) return;
+    const ziel = rasterWert(hoehe, p.x, p.z);
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      const x = i * ZELLE - HALB, wz = j * ZELLE - HALB;
+      const d = Math.hypot(x - p.x, wz - p.z);
+      if (d >= r) continue;
+      const w = 1 - glatt(r * 0.55, r, d);
+      hoehe[j * n + i] += (ziel - hoehe[j * n + i]) * w;
+    }
+  });
+
+  // Startpunkt am Strand, weit weg von allem
+  const strand = land.filter(c => c.h > 0.5 && c.h < 1.6 && pois.every(p => Math.hypot(p.x - c.x, p.z - c.z) >= 30));
+  if (!strand.length) return null;
+  const s = strand[Math.floor(zuf() * strand.length)];
+  const start = { x: s.x, z: s.z, yaw: Math.atan2(s.x, s.z) };
+
+  // Bäume und Felsen
+  const nahePoi = (x, wz, extra) => pois.some(p => Math.hypot(p.x - x, p.z - wz) < ORTE[p.art].radius + extra);
+  const baeume = [], felsen = [];
+  for (let v = 0; v < 3000 && baeume.length < 760; v++) {
+    const x = (zuf() - 0.5) * WELT, wz = (zuf() - 0.5) * WELT;
+    const h = rasterWert(hoehe, x, wz);
+    const art = zuf() < 0.45 ? 0 : 1, sk = 0.75 + zuf() * 0.6, rot = zuf() * Math.PI * 2, farbTon = zuf();
+    if (h < 2 || h > 21 || steigungAus(hoehe, x, wz) > 0.55 || nahePoi(x, wz, 5)) continue;
+    if (Math.hypot(x - start.x, wz - start.z) < 11) continue;
+    const w = rasterWert(wald, x, wz);
+    if (zuf() > (w > 0.55 ? 0.85 : 0.07)) continue;
+    baeume.push({ x, z: wz, h, art, s: sk, r: rot, f: farbTon });
+  }
+  for (let v = 0; v < 1200 && felsen.length < 230; v++) {
+    const x = (zuf() - 0.5) * WELT, wz = (zuf() - 0.5) * WELT;
+    const h = rasterWert(hoehe, x, wz), st = steigungAus(hoehe, x, wz);
+    const sk = 0.5 + zuf() * 1.8, rot = zuf() * 6.28, zufall = zuf();
+    if (h < 0.3 || nahePoi(x, wz, 3) || Math.hypot(x - start.x, wz - start.z) < 9) continue;
+    if (!(st > 0.42 || h > 15 || (h < 1.6 && zufall < 0.12))) continue;
+    felsen.push({ x, z: wz, h, s: sk, r: rot });
+  }
+  return { seed, hoehe, wald, pois, baeume, felsen, start };
+}
+
+/* ============================================================
+   3D-Grundgerüst
+   ============================================================ */
+const renderer = new THREE.WebGLRenderer({ canvas: el('welt'), antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const szene = new THREE.Scene();
+szene.fog = new THREE.Fog(0xa9d3ec, 35, 240);
+const kamera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 700);
+kamera.rotation.order = 'YXZ';
+szene.add(kamera);
+
+const himmelLicht = new THREE.HemisphereLight(0xbfdcff, 0x4a3b2a, 1.1);
+szene.add(himmelLicht);
+const sonne = new THREE.DirectionalLight(0xfff1d6, 2.5);
+szene.add(sonne); szene.add(sonne.target);
+
+// Himmelskugel mit Farbverlauf
+const himmelGeo = new THREE.SphereGeometry(500, 24, 14);
+himmelGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(himmelGeo.attributes.position.count * 3), 3));
+const himmel = new THREE.Mesh(himmelGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
+himmel.renderOrder = -10;
+szene.add(himmel);
+
+// Sterne
+const sternGeo = new THREE.BufferGeometry();
+{
+  const p = [];
+  for (let i = 0; i < 700; i++) {
+    const u = Math.random() * 2 - 1, w = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(1 - u * u);
+    if (u < 0.05) continue;
+    p.push(Math.cos(w) * r * 450, u * 450, Math.sin(w) * r * 450);
+  }
+  sternGeo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+}
+const sterne = new THREE.Points(sternGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
+szene.add(sterne);
+
+const sonnenScheibe = new THREE.Mesh(new THREE.SphereGeometry(14, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfff2c4, fog: false }));
+const mondScheibe = new THREE.Mesh(new THREE.SphereGeometry(9, 16, 12), new THREE.MeshBasicMaterial({ color: 0xdfe6ff, fog: false }));
+szene.add(sonnenScheibe, mondScheibe);
+
+// Fackel in der Hand
+const fackelLicht = new THREE.PointLight(0xff9440, 0, 42, 1.6);
+fackelLicht.position.set(0.35, -0.1, -0.6);
+kamera.add(fackelLicht);
+const fackelModell = new THREE.Group();
+{
+  const stab = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.55, 6), new THREE.MeshStandardMaterial({ color: 0x5a3a20, roughness: 1 }));
+  stab.position.y = -0.2;
+  const kopf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.09, 8), new THREE.MeshStandardMaterial({ color: 0x2c1d12, roughness: 1 }));
+  kopf.position.y = 0.08;
+  const flammeAussen = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.24, 8), new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  flammeAussen.position.y = 0.23;
+  const flammeInnen = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.15, 8), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  flammeInnen.position.y = 0.19;
+  fackelModell.add(stab, kopf, flammeAussen, flammeInnen);
+  fackelModell.userData.flammen = [flammeAussen, flammeInnen];
+  fackelModell.position.set(0.42, -0.5, -0.95);
+  fackelModell.scale.setScalar(0.75);
+  fackelModell.rotation.set(0.15, 0, -0.18);
+  fackelModell.visible = false;
+  kamera.add(fackelModell);
+}
+
+// Regen für den Sturm
+const regenAnzahl = 1400;
+const regenGeo = new THREE.BufferGeometry();
+regenGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(regenAnzahl * 3), 3));
+{
+  const p = regenGeo.attributes.position.array;
+  for (let i = 0; i < regenAnzahl; i++) { p[i * 3] = (Math.random() - 0.5) * 60; p[i * 3 + 1] = Math.random() * 30; p[i * 3 + 2] = (Math.random() - 0.5) * 60; }
+}
+const regen = new THREE.Points(regenGeo, new THREE.PointsMaterial({ color: 0xaabbd6, size: 0.09, transparent: true, opacity: 0.55, depthWrite: false }));
+regen.visible = false;
+szene.add(regen);
+
+/* ============================================================
+   Materialien und Bauteile
+   ============================================================ */
+const matCache = {};
+function mat(f, extra) {
+  const k = f + '|' + JSON.stringify(extra || {});
+  if (!matCache[k]) matCache[k] = new THREE.MeshStandardMaterial(Object.assign({ color: f, roughness: 0.92, flatShading: true }, extra || {}));
+  return matCache[k];
+}
+function teil(geo, f, x, y, wz, extra) {
+  const m = new THREE.Mesh(geo, typeof f === 'object' ? f : mat(f, extra));
+  m.position.set(x, y, wz);
+  return m;
+}
+function eigenesMaterial(m) { m.userData.eigen = true; return m; }
+function siegelKugel() {
+  return new THREE.Mesh(new THREE.SphereGeometry(0.38, 18, 14),
+    eigenesMaterial(new THREE.MeshStandardMaterial({ color: 0xffd36b, emissive: 0xe2a030, emissiveIntensity: 1.6, roughness: 0.3 })));
+}
+
+const MARMOR = 0xece5d3, STEIN = 0xb3a893, FELSSTEIN = 0x7a7166, HOLZ = 0x6a4a2c;
+
+function modellTor() {
+  const g = new THREE.Group();
+  g.add(teil(new THREE.BoxGeometry(15, 0.7, 9), 0x9c927f, 0, 0.35, 0));
+  g.add(teil(new THREE.BoxGeometry(12, 0.5, 7), 0xa89e8a, 0, 0.9, 0));
+  g.add(teil(new THREE.BoxGeometry(2.2, 11, 2.2), STEIN, -4.6, 6.6, 0));
+  g.add(teil(new THREE.BoxGeometry(2.2, 11, 2.2), STEIN, 4.6, 6.6, 0));
+  g.add(teil(new THREE.BoxGeometry(13, 2, 3), STEIN, 0, 13, 0));
+  const kugeln = [];
+  for (let i = 0; i < 4; i++) {
+    const k = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 10), eigenesMaterial(new THREE.MeshStandardMaterial({ color: 0x3a3530, emissive: 0x000000, roughness: 0.5 })));
+    k.position.set(-3.6 + i * 2.4, 14.5, 0);
+    g.add(k); kugeln.push(k);
+  }
+  const portal = new THREE.Mesh(new THREE.PlaneGeometry(7, 10.8),
+    eigenesMaterial(new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })));
+  portal.position.set(0, 6.5, 0);
+  g.add(portal);
+  return { g, kugeln, portal };
+}
+
+function modellTempel() {
+  const g = new THREE.Group();
+  g.add(teil(new THREE.BoxGeometry(11, 1.2, 15), MARMOR, 0, 0.6, 0));
+  const saeule = new THREE.CylinderGeometry(0.45, 0.52, 6, 10);
+  [-4, 4].forEach(sx => [-6, -2, 2, 6].forEach(sz => g.add(teil(saeule, MARMOR, sx, 4.2, sz))));
+  g.add(teil(new THREE.BoxGeometry(11, 1, 15), MARMOR, 0, 7.7, 0));
+  const dach = teil(new THREE.CylinderGeometry(6.4, 6.4, 15.4, 3, 1), 0xd9cfb9, 0, 9.3, 0);
+  dach.rotation.x = -Math.PI / 2; dach.scale.z = 0.35;
+  g.add(dach);
+  g.add(teil(new THREE.BoxGeometry(1.6, 1.2, 1.2), 0xcfc4ad, 0, 1.8, 0));
+  const kugel = siegelKugel(); kugel.position.set(0, 2.9, 0); g.add(kugel);
+  return { g, kugel };
+}
+
+function modellHoehle(richtung) {
+  const g = new THREE.Group();
+  const block = (r, x, y, wz, sx, sy, sz) => { const m = teil(new THREE.DodecahedronGeometry(r, 0), FELSSTEIN, x, y, wz); m.scale.set(sx, sy, sz); m.rotation.set(Math.random(), Math.random(), Math.random()); g.add(m); };
+  block(5, 0, 1.5, -1, 1.3, 0.85, 1);
+  block(3.2, -3.5, 1.4, 1.5, 1, 1, 1);
+  block(3.2, 3.6, 1.3, 1.4, 1, 1.1, 1);
+  block(2.6, 0, 4.6, 1.2, 1.6, 0.6, 0.9);
+  const loch = teil(new THREE.CircleGeometry(1.9, 18), new THREE.MeshBasicMaterial({ color: 0x020203 }), 0, 1.7, 3.6);
+  loch.scale.y = 1.25;
+  g.add(loch);
+  const kugel = siegelKugel(); kugel.position.set(0, 1.6, 3.2); kugel.scale.setScalar(0.5); g.add(kugel);
+  g.rotation.y = richtung;
+  return { g, kugel };
+}
+
+function modellRuine() {
+  const g = new THREE.Group();
+  const saeule = new THREE.CylinderGeometry(0.42, 0.5, 1, 9);
+  for (let i = 0; i < 6; i++) {
+    const w = i / 6 * Math.PI * 2, hoch = 1 + Math.random() * 3.4;
+    const m = teil(saeule, MARMOR, Math.cos(w) * 4.6, hoch / 2, Math.sin(w) * 4.6);
+    m.scale.y = hoch; m.rotation.z = (Math.random() - 0.5) * 0.12; g.add(m);
+  }
+  const liegend = teil(new THREE.CylinderGeometry(0.45, 0.45, 4.5, 9), MARMOR, 2.5, 0.45, -1.8);
+  liegend.rotation.set(0, 0.6, Math.PI / 2); g.add(liegend);
+  g.add(teil(new THREE.BoxGeometry(1.5, 1.1, 1.5), 0xcfc4ad, 0, 0.55, 0));
+  const kugel = siegelKugel(); kugel.position.set(0, 1.6, 0); g.add(kugel);
+  return { g, kugel };
+}
+
+function modellGipfel() {
+  const g = new THREE.Group();
+  g.add(teil(new THREE.BoxGeometry(2, 0.8, 2), FELSSTEIN, 0, 0.4, 0));
+  g.add(teil(new THREE.BoxGeometry(1.4, 0.7, 1.4), 0x8a8073, 0, 1.15, 0));
+  g.add(teil(new THREE.BoxGeometry(0.9, 0.5, 0.9), 0x968c7e, 0, 1.75, 0));
+  const kugel = siegelKugel(); kugel.position.set(0, 2.6, 0); g.add(kugel);
+  return { g, kugel };
+}
+
+function modellQuelle() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 9; i++) {
+    const w = i / 9 * Math.PI * 2;
+    const s = teil(new THREE.DodecahedronGeometry(0.45, 0), 0x8f877a, Math.cos(w) * 1.9, 0.2, Math.sin(w) * 1.9);
+    s.rotation.set(i, i * 2, 0); g.add(s);
+  }
+  g.add(teil(new THREE.CylinderGeometry(1.7, 1.7, 0.18, 18), 0x4fb3d9, 0, 0.12, 0, { emissive: 0x0c3a52, roughness: 0.15, flatShading: false }));
+  return { g };
+}
+
+function modellLager() {
+  const g = new THREE.Group();
+  const zelt = teil(new THREE.ConeGeometry(2.1, 2.8, 4), 0x9b7b56, -2.6, 1.4, -0.8); zelt.rotation.y = Math.PI / 4; g.add(zelt);
+  const holz = new THREE.CylinderGeometry(0.16, 0.16, 1.6, 6);
+  [0, 1.1, 2.2].forEach(w => { const s = teil(holz, HOLZ, Math.cos(w) * 0.3, 0.15, Math.sin(w) * 0.3); s.rotation.set(Math.PI / 2, w, 0); g.add(s); });
+  const sitz = teil(new THREE.CylinderGeometry(0.3, 0.3, 2.2, 7), HOLZ, 2, 0.3, 0.5); sitz.rotation.set(0, 0.4, Math.PI / 2); g.add(sitz);
+  const feuer = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 7), eigenesMaterial(new THREE.MeshBasicMaterial({ color: 0xff8a2a, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })));
+  feuer.position.y = 0.6; g.add(feuer);
+  const licht = new THREE.PointLight(0xff8a3a, 10, 20, 2); licht.position.y = 1.1; g.add(licht);
+  return { g, feuer, licht };
+}
+
+function modellDorf() {
+  const g = new THREE.Group();
+  const weiss = 0xf3f0e8, blau = 0x2f62b0;
+  const plaetze = [[-6, -4, 0.2], [-1, -7, -0.1], [5, -5, 0.3], [7, 2, -0.2], [-6, 4, 0.1], [2, 7, 0.4]];
+  plaetze.forEach(([x, wz, r], i) => {
+    const b = 3 + (i % 3) * 0.7, h = 2.5 + (i % 2) * 0.9, t = 3 + ((i + 1) % 3) * 0.6;
+    const haus = new THREE.Group();
+    haus.add(teil(new THREE.BoxGeometry(b, h, t), weiss, 0, h / 2, 0));
+    haus.add(teil(new THREE.BoxGeometry(b + 0.3, 0.25, t + 0.3), 0xe2ddd2, 0, h + 0.12, 0));
+    haus.add(teil(new THREE.BoxGeometry(0.8, 1.6, 0.08), blau, 0, 0.8, t / 2 + 0.04));
+    haus.add(teil(new THREE.BoxGeometry(0.6, 0.6, 0.08), blau, b / 4, h * 0.65, t / 2 + 0.04));
+    haus.position.set(x, 0, wz); haus.rotation.y = r;
+    g.add(haus);
+  });
+  const kirche = new THREE.Group();
+  kirche.add(teil(new THREE.BoxGeometry(3.4, 3.6, 4.4), weiss, 0, 1.8, 0));
+  kirche.add(teil(new THREE.SphereGeometry(1.6, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), blau, 0, 3.6, 0, { flatShading: false, roughness: 0.6 }));
+  kirche.add(teil(new THREE.BoxGeometry(0.12, 0.7, 0.12), 0xd8c9a0, 0, 5.5, 0));
+  kirche.add(teil(new THREE.BoxGeometry(0.45, 0.12, 0.12), 0xd8c9a0, 0, 5.6, 0));
+  kirche.position.set(1, 0, 0);
+  g.add(kirche);
+  return { g };
+}
+
+function modellWrack() {
+  const g = new THREE.Group();
+  const rumpf = teil(new THREE.BoxGeometry(3.2, 1.8, 9), 0x5b4030, 0, 0.5, 0); rumpf.rotation.set(0.05, 0, 0.35); g.add(rumpf);
+  const bug = teil(new THREE.ConeGeometry(1.7, 3, 4), 0x5b4030, 0.25, 0.6, 5.6); bug.rotation.set(Math.PI / 2, Math.PI / 4, 0.35); bug.scale.set(1, 1, 0.75); g.add(bug);
+  const mast = teil(new THREE.CylinderGeometry(0.12, 0.16, 7, 6), 0x4a3424, -0.8, 3, -0.5); mast.rotation.set(0.25, 0, 0.55); g.add(mast);
+  for (let i = 0; i < 4; i++) { const p = teil(new THREE.BoxGeometry(0.4, 0.1, 2.4), 0x6b4c34, 3 + i * 0.8, 0.1, -2 + i * 1.3); p.rotation.y = i; g.add(p); }
+  return { g };
+}
+
+/* ============================================================
+   Welt in 3D bauen
+   ============================================================ */
+let W = null;   // aktuelle Welt
+let z = null;   // aktueller Spielstand
+
+function baueWelt(d) {
+  if (W && W.gruppe) {
+    szene.remove(W.gruppe);
+    W.gruppe.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material && o.material.userData && o.material.userData.eigen) o.material.dispose();
+    });
+    el('kompass').innerHTML = '';
+  }
+  const gruppe = new THREE.Group();
+  szene.add(gruppe);
+  W = Object.assign({}, d, { gruppe, kugeln: [], leuchten: [], feuer: [], tor: null, markierungen: [] });
+  const n = RASTER;
+
+  // Gelände
+  const geo = new THREE.PlaneGeometry(WELT, WELT, n - 1, n - 1);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  for (let k = 0; k < pos.count; k++) pos.setY(k, d.hoehe[k]);
+  geo.computeVertexNormals();
+  const nor = geo.attributes.normal;
+  const farben = new Float32Array(pos.count * 3);
+  const SAND = farbe(0.87, 0.79, 0.57), NASS = farbe(0.66, 0.6, 0.45), BODEN = farbe(0.42, 0.45, 0.4);
+  const GRAS = farbe(0.62, 0.64, 0.32), GRAS2 = farbe(0.36, 0.48, 0.22), FELS = farbe(0.6, 0.55, 0.48), FELS2 = farbe(0.47, 0.43, 0.39);
+  const c = new THREE.Color(), c2 = new THREE.Color();
+  for (let k = 0; k < pos.count; k++) {
+    const y = d.hoehe[k], ny = nor.getY(k), w = d.wald[k];
+    if (y < -1) c.copy(BODEN);
+    else if (y < 0.3) c.copy(BODEN).lerp(NASS, glatt(-1, 0.3, y));
+    else if (y < 1.8) c.copy(NASS).lerp(SAND, glatt(0.3, 0.9, y));
+    else {
+      c.copy(SAND).lerp(GRAS, glatt(1.8, 3, y));
+      c2.copy(GRAS).lerp(GRAS2, glatt(0.45, 0.7, w));
+      if (y >= 3) c.copy(c2);
+      const fels = Math.max(glatt(0.86, 0.7, ny), glatt(17, 23, y));
+      c.lerp(c2.copy(FELS).lerp(FELS2, (Math.sin(k * 12.9898) * 0.5 + 0.5)), fels);
+    }
+    const j = 1 + (((Math.sin(k * 78.233) * 43758.5453) % 1) * 0.06);
+    farben[k * 3] = c.r * j; farben[k * 3 + 1] = c.g * j; farben[k * 3 + 2] = c.b * j;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(farben, 3));
+  const gelaende = new THREE.Mesh(geo, eigenesMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: true })));
+  gruppe.add(gelaende);
+
+  // Meer und Meeresgrund
+  const grund = teil(new THREE.PlaneGeometry(1400, 1400), 0x16384a, 0, -14, 0, { flatShading: false });
+  grund.rotation.x = -Math.PI / 2; gruppe.add(grund);
+  W.wasser = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400),
+    eigenesMaterial(new THREE.MeshStandardMaterial({ color: 0x2a86a8, roughness: 0.18, metalness: 0.15, transparent: true, opacity: 0.86 })));
+  W.wasser.rotation.x = -Math.PI / 2;
+  gruppe.add(W.wasser);
+
+  // Bäume (als Instanzen, damit es flüssig läuft)
+  const zyp = d.baeume.filter(b => b.art === 0), oli = d.baeume.filter(b => b.art === 1);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sk = new THREE.Vector3(), achse = new THREE.Vector3(0, 1, 0);
+  const instanzen = (liste, geoKrone, geoStamm, kroneFarbe) => {
+    const krone = new THREE.InstancedMesh(geoKrone, mat(0xffffff), liste.length);
+    const stamm = new THREE.InstancedMesh(geoStamm, mat(0x5d4430), liste.length);
+    liste.forEach((b, i) => {
+      q.setFromAxisAngle(achse, b.r); v.set(b.x, b.h - 0.15, b.z); sk.setScalar(b.s);
+      m4.compose(v, q, sk);
+      krone.setMatrixAt(i, m4); stamm.setMatrixAt(i, m4);
+      krone.setColorAt(i, c.copy(kroneFarbe).multiplyScalar(0.8 + b.f * 0.4));
+    });
+    krone.instanceMatrix.needsUpdate = true; stamm.instanceMatrix.needsUpdate = true;
+    if (krone.instanceColor) krone.instanceColor.needsUpdate = true;
+    gruppe.add(krone, stamm);
+  };
+  const zKrone = new THREE.ConeGeometry(0.95, 6.5, 7); zKrone.translate(0, 4.1, 0);
+  const zStamm = new THREE.CylinderGeometry(0.14, 0.2, 1.2, 5); zStamm.translate(0, 0.6, 0);
+  instanzen(zyp, zKrone, zStamm, farbe(0.2, 0.33, 0.18));
+  const oKrone = new THREE.IcosahedronGeometry(1.8, 0); oKrone.scale(1.25, 0.85, 1.25); oKrone.translate(0, 2.9, 0);
+  const oStamm = new THREE.CylinderGeometry(0.2, 0.34, 2.4, 6); oStamm.translate(0, 1.2, 0);
+  instanzen(oli, oKrone, oStamm, farbe(0.47, 0.55, 0.35));
+
+  // Felsen
+  const felsen = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1, 0), mat(0x8a8275), d.felsen.length);
+  d.felsen.forEach((f, i) => {
+    q.setFromAxisAngle(achse, f.r); v.set(f.x, f.h + f.s * 0.15, f.z); sk.set(f.s, f.s * 0.7, f.s);
+    m4.compose(v, q, sk); felsen.setMatrixAt(i, m4);
+  });
+  felsen.instanceMatrix.needsUpdate = true;
+  gruppe.add(felsen);
+
+  // Orte
+  d.pois.forEach((p, idx) => {
+    const h = rasterWert(d.hoehe, p.x, p.z);
+    let m;
+    if (p.art === 'tor') { m = modellTor(); W.tor = m; }
+    else if (p.art === 'tempel') m = modellTempel();
+    else if (p.art === 'hoehle') m = modellHoehle(Math.atan2(-p.x, -p.z));
+    else if (p.art === 'ruine') m = modellRuine();
+    else if (p.art === 'gipfel') m = modellGipfel();
+    else if (p.art === 'quelle') m = modellQuelle();
+    else if (p.art === 'lager') { m = modellLager(); W.feuer.push(m); }
+    else if (p.art === 'dorf') m = modellDorf();
+    else m = modellWrack();
+    m.g.position.set(p.x, p.art === 'wrack' ? Math.max(h, -0.2) : h, p.z);
+    if (p.art === 'tempel' || p.art === 'dorf' || p.art === 'ruine') m.g.rotation.y = Math.atan2(-p.x, -p.z);
+    gruppe.add(m.g);
+    if (m.kugel) W.kugeln[idx] = m.kugel;
+
+    // Lichtsäule über Siegelorten und dem Tor
+    if (SIEGEL_ORTE.includes(p.art) || p.art === 'tor') {
+      const saeule = new THREE.Mesh(new THREE.CylinderGeometry(p.art === 'tor' ? 1.4 : 0.9, p.art === 'tor' ? 1.4 : 0.9, 160, 16, 1, true),
+        eigenesMaterial(new THREE.MeshBasicMaterial({ color: p.art === 'tor' ? 0x9fd4ff : 0xffcf6a, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide })));
+      saeule.position.set(p.x, h + 80, p.z);
+      gruppe.add(saeule);
+      W.leuchten.push({ poi: p, mesh: saeule });
+    }
+
+    // Markierung im Kompass
+    const mk = document.createElement('div');
+    mk.className = 'km' + (SIEGEL_ORTE.includes(p.art) || p.art === 'tor' ? ' ziel' : '');
+    mk.textContent = ORTE[p.art].symbol;
+    el('kompass').appendChild(mk);
+    W.markierungen.push({ poi: p, el: mk });
+  });
+
+  // Himmelsrichtungen im Kompass
+  [['N', 0], ['NO', -45], ['O', -90], ['SO', -135], ['S', 180], ['SW', 135], ['W', 90], ['NW', 45]].forEach(([t, g]) => {
+    const r = document.createElement('div');
+    r.className = 'km richtung' + (t.length === 1 ? ' haupt' : '');
+    r.textContent = t;
+    el('kompass').appendChild(r);
+    W.markierungen.push({ winkel: g * Math.PI / 180, el: r });
+  });
+
+  baueKarte();
+}
+
+/* ============================================================
+   Minikarte
+   ============================================================ */
+const KARTE_PX = 160;
+function baueKarte() {
+  const basis = document.createElement('canvas');
+  basis.width = basis.height = KARTE_PX;
+  const ctx = basis.getContext('2d');
+  const bild = ctx.createImageData(KARTE_PX, KARTE_PX);
+  for (let py = 0; py < KARTE_PX; py++) for (let px = 0; px < KARTE_PX; px++) {
+    const x = (px + 0.5) / KARTE_PX * WELT - HALB, wz = (py + 0.5) / KARTE_PX * WELT - HALB;
+    const h = rasterWert(W.hoehe, x, wz), w = rasterWert(W.wald, x, wz);
+    let f;
+    if (h < 0) f = [24 + h * 0.6, 92 + h * 2, 130 + h * 2];
+    else if (h < 1.8) f = [214, 196, 146];
+    else if (h > 18) f = [140, 130, 116];
+    else if (w > 0.55) f = [72, 104, 58];
+    else f = [128, 146, 80];
+    const s = 1 + (h > 0 ? Math.min(h, 25) / 60 : 0);
+    const o = (py * KARTE_PX + px) * 4;
+    bild.data[o] = f[0] * s; bild.data[o + 1] = f[1] * s; bild.data[o + 2] = f[2] * s; bild.data[o + 3] = 255;
+  }
+  ctx.putImageData(bild, 0, 0);
+  W.kartenBasis = basis;
+  W.kartenEntdeckt = document.createElement('canvas');
+  W.kartenEntdeckt.width = W.kartenEntdeckt.height = KARTE_PX;
+}
+
+function zelleAufdecken(i, j) {
+  const s = KARTE_PX / KARTE_N;
+  W.kartenEntdeckt.getContext('2d').drawImage(W.kartenBasis, i * s, j * s, s, s, i * s, j * s, s, s);
+}
+
+function aufdecken(radius) {
+  const zs = WELT / KARTE_N;
+  const ci = Math.floor((z.x + HALB) / zs), cj = Math.floor((z.z + HALB) / zs);
+  const r = Math.ceil(radius / zs);
+  for (let j = cj - r; j <= cj + r; j++) for (let i = ci - r; i <= ci + r; i++) {
+    if (i < 0 || j < 0 || i >= KARTE_N || j >= KARTE_N) continue;
+    if (z.entdeckt[j * KARTE_N + i]) continue;
+    const mx = (i + 0.5) * zs - HALB, mz = (j + 0.5) * zs - HALB;
+    if (Math.hypot(mx - z.x, mz - z.z) > radius) continue;
+    z.entdeckt[j * KARTE_N + i] = 1;
+    zelleAufdecken(i, j);
+  }
+}
+
+function zeichneKarte() {
+  const cv = el('minikarte'), ctx = cv.getContext('2d');
+  const G = cv.width;
+  const sicht = 150;  // Meter, die die Karte zeigt
+  const proM = KARTE_PX / WELT;
+  ctx.fillStyle = '#081020'; ctx.fillRect(0, 0, G, G);
+  const qx = (z.x + HALB) * proM - sicht * proM / 2, qz = (z.z + HALB) * proM - sicht * proM / 2;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(W.kartenEntdeckt, qx, qz, sicht * proM, sicht * proM, 0, 0, G, G);
+  const zuKarte = (x, wz) => [(x - z.x) / sicht * G + G / 2, (wz - z.z) / sicht * G + G / 2];
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = Math.round(G * 0.1) + 'px sans-serif';
+  z.pois.forEach(p => {
+    if (!p.bekannt) return;
+    let [px, py] = zuKarte(p.x, p.z);
+    const dx = px - G / 2, dy = py - G / 2, d = Math.hypot(dx, dy), max = G / 2 - 12;
+    if (d > max) { px = G / 2 + dx / d * max; py = G / 2 + dy / d * max; }
+    ctx.globalAlpha = (SIEGEL_ORTE.includes(p.art) && p.erledigt) ? 0.45 : 1;
+    ctx.fillText(ORTE[p.art].symbol, px, py);
+  });
+  ctx.globalAlpha = 1;
+  W.schatten && W.schatten.forEach(s => {
+    const d = Math.hypot(s.x - z.x, s.z - z.z);
+    if (d > 22) return;
+    const [px, py] = zuKarte(s.x, s.z);
+    ctx.fillStyle = 'rgba(255,60,60,0.95)';
+    ctx.beginPath(); ctx.arc(px, py, G * 0.025, 0, Math.PI * 2); ctx.fill();
+  });
+  // Spieler als Pfeil
+  ctx.save();
+  ctx.translate(G / 2, G / 2); ctx.rotate(-z.yaw);
+  ctx.fillStyle = '#ffe2a0'; ctx.strokeStyle = '#2a1a05'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, -G * 0.07); ctx.lineTo(G * 0.05, G * 0.05); ctx.lineTo(0, G * 0.025); ctx.lineTo(-G * 0.05, G * 0.05); ctx.closePath();
+  ctx.stroke(); ctx.fill();
+  ctx.restore();
+}
+
+/* ============================================================
+   Spielstand
+   ============================================================ */
+function neuerStand(daten) {
+  return {
+    seed: daten.seed, x: daten.start.x, z: daten.start.z, yaw: daten.start.yaw, pitch: 0,
+    stunde: START_STUNDE, wasser: 100, fackel: 100, mut: 100, fackelAn: false,
+    siegel: { weisheit: false, tapferkeit: false, erinnerung: false, himmel: false },
+    pois: daten.pois, entdeckt: new Uint8Array(KARTE_N * KARTE_N),
+    nachtNr: 0, sturmStufe: 0, tagebuch: [],
+    imSpiel: true, vorbei: false, modalOffen: false, menueOffen: false,
+    pause: 0, ereignisIn: 70, ambienteIn: 25, herzIn: 0, schrittWeg: 0, kartenTakt: 0, aufdeckTakt: 0
+  };
+}
+
+function neuesSpiel(seed) {
+  const d = erzeugeDaten(seed);
+  baueWelt(d);
+  z = neuerStand(W);
+  W.schatten = [];
+  spielAnzeigen();
+  meldung('Du erwachst am Strand. Von deinem Schiff sind nur Planken übrig.');
+  setTimeout(() => meldung('Das Tor des Orakels steht auf dem Plateau in der Inselmitte. Folge dem blauen Licht.', 'hinweis'), 2500);
+  aufdecken(35);
+  speichere();
+}
+
+function speichere() {
+  if (!z || !z.imSpiel || z.vorbei) return;
+  try {
+    const kopie = {
+      seed: z.seed, x: z.x, z: z.z, yaw: z.yaw, stunde: z.stunde, wasser: z.wasser, fackel: z.fackel, mut: z.mut,
+      fackelAn: z.fackelAn, siegel: z.siegel, nachtNr: z.nachtNr, sturmStufe: z.sturmStufe, tagebuch: z.tagebuch.slice(-20),
+      pois: z.pois.map(p => ({ erledigt: p.erledigt, bekannt: p.bekannt, hinweis: p.hinweis, durchsucht: p.durchsucht, gesprochen: p.gesprochen })),
+      entdeckt: Array.from(z.entdeckt).join('')
+    };
+    localStorage.setItem(SPEICHER, JSON.stringify(kopie));
+  } catch (e) { /* Speichern nicht möglich */ }
+}
+
+function laden() {
+  try {
+    const roh = localStorage.getItem(SPEICHER);
+    if (!roh) return false;
+    const s = JSON.parse(roh);
+    const d = erzeugeDaten(s.seed);
+    baueWelt(d);
+    z = neuerStand(W);
+    Object.assign(z, { x: s.x, z: s.z, yaw: s.yaw, stunde: s.stunde, wasser: s.wasser, fackel: s.fackel, mut: s.mut, fackelAn: s.fackelAn, siegel: s.siegel, nachtNr: s.nachtNr, sturmStufe: s.sturmStufe, tagebuch: s.tagebuch || [] });
+    s.pois.forEach((f, i) => Object.assign(z.pois[i], f));
+    for (let k = 0; k < s.entdeckt.length; k++) if (s.entdeckt[k] === '1') { z.entdeckt[k] = 1; zelleAufdecken(k % KARTE_N, Math.floor(k / KARTE_N)); }
+    W.schatten = [];
+    if (istNacht()) schattenErzeugen();
+    spielAnzeigen();
+    meldung('Weiter geht es. ' + uhrText() + '.');
+    return true;
+  } catch (e) { console.error(e); return false; }
+}
+
+function spielAnzeigen() {
+  el('titel').hidden = true; el('ende').hidden = true; el('hud').hidden = false;
+  el('titel').style.display = 'none';
+  el('steuerHinweis').style.opacity = 1;
+  setTimeout(() => { el('steuerHinweis').style.opacity = 0; }, 9000);
+  hudWerte();
+}
+
+/* ============================================================
+   Zeit
+   ============================================================ */
+const uhrzeit = () => ((z.stunde % 24) + 24) % 24;
+const istNacht = () => { const u = uhrzeit(); return u >= 20 || u < 6; };
+function uhrText() {
+  const tag = Math.floor(z.stunde / 24) + 1, u = uhrzeit();
+  const hh = Math.floor(u), mm = Math.floor((u - hh) * 60 / 10) * 10;
+  return 'Tag ' + tag + ', ' + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+}
+
+function zeitVergeht(stunden) {
+  const alt = z.stunde;
+  z.stunde += stunden;
+  for (let k = Math.floor(alt) + 1; k <= Math.floor(z.stunde); k++) stundenWechsel(k);
+  if (z.stunde >= STURM_STUNDE && !z.vorbei) ende('sturm');
+}
+
+function stundenWechsel(k) {
+  const u = ((k % 24) + 24) % 24;
+  if (u === 18) meldung('Das Licht wird golden. In zwei Stunden ist es Nacht.', 'hinweis');
+  if (u === 20) { z.nachtNr++; meldung('Die Nacht bricht an. Etwas regt sich auf der Insel.', 'gefahr'); schattenErzeugen(); gefahrTon(); }
+  if (u === 6) { W.schatten.forEach(s => W.gruppe.remove(s.mesh)); W.schatten = []; meldung('Die Sonne geht auf. Die Schatten lösen sich auf.', 'gut'); }
+  const rest = STURM_STUNDE - k;
+  if (rest === 24 && z.sturmStufe < 1) { z.sturmStufe = 1; meldung('Am Horizont türmen sich schwarze Wolken. Noch ein Tag bis zum Sturm.', 'hinweis'); }
+  if (rest === 10 && z.sturmStufe < 2) { z.sturmStufe = 2; meldung('Der Wind dreht auf. Der Sturm kommt.', 'gefahr'); }
+  if (rest === 3 && z.sturmStufe < 3) { z.sturmStufe = 3; meldung('Die Wellen schlagen weit den Strand hoch. Beeil dich!', 'gefahr'); }
+}
+
+/* ============================================================
+   Schatten
+   ============================================================ */
+function schattenModell() {
+  const g = new THREE.Group();
+  const stoff = new THREE.MeshStandardMaterial({ color: 0x07040c, roughness: 1, transparent: true, opacity: 0.88 });
+  eigenesMaterial(stoff);
+  const koerper = new THREE.Mesh(new THREE.ConeGeometry(0.75, 2.5, 8, 1, true), stoff); koerper.position.y = 1.25;
+  const kopf = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), stoff); kopf.position.y = 2.45;
+  const augeMat = eigenesMaterial(new THREE.MeshBasicMaterial({ color: 0xff2a2a, fog: false }));
+  const a1 = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), augeMat); a1.position.set(-0.15, 2.5, 0.38);
+  const a2 = a1.clone(); a2.position.x = 0.15;
+  const schein = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), eigenesMaterial(new THREE.MeshBasicMaterial({ color: 0xff2020, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+  schein.position.set(0, 2.5, 0.3); schein.scale.set(1.3, 0.6, 0.6);
+  g.add(koerper, kopf, a1, a2, schein);
+  g.userData.augen = augeMat;
+  return g;
+}
+
+function schattenErzeugen() {
+  const anzahl = Math.min(3, 1 + z.nachtNr);
+  W.schatten.forEach(s => W.gruppe.remove(s.mesh));
+  W.schatten = [];
+  for (let i = 0; i < anzahl; i++) {
+    for (let v = 0; v < 200; v++) {
+      const x = (Math.random() - 0.5) * WELT * 0.85, wz = (Math.random() - 0.5) * WELT * 0.85;
+      if (!schattenDarf(x, wz) || Math.hypot(x - z.x, wz - z.z) < 55) continue;
+      const mesh = schattenModell();
+      W.gruppe.add(mesh);
+      W.schatten.push({ x, z: wz, mesh, jagt: false, ziel: null, phase: Math.random() * 10 });
+      break;
+    }
+  }
+}
+
+function imSchutz(x, wz) {
+  return z.pois.some(p => SICHER.includes(p.art) && Math.hypot(p.x - x, p.z - wz) < SICHER_RADIUS);
+}
+function schattenDarf(x, wz) {
+  if (Math.abs(x) > HALB - 3 || Math.abs(wz) > HALB - 3) return false;
+  if (hoeheBei(x, wz) < 0.2) return false;
+  return !imSchutz(x, wz);
+}
+function schattenWegsetzen(s) {
+  for (let v = 0; v < 200; v++) {
+    const x = (Math.random() - 0.5) * WELT * 0.85, wz = (Math.random() - 0.5) * WELT * 0.85;
+    if (schattenDarf(x, wz) && Math.hypot(x - z.x, wz - z.z) > 45) { s.x = x; s.z = wz; s.jagt = false; return; }
+  }
+}
+
+function bewegeSchatten(dt) {
+  const mitLicht = z.fackelAn && z.fackel > 0;
+  const wahr = mitLicht ? 42 : 12;
+  let naechster = 999;
+  W.schatten.forEach(s => {
+    const dx = z.x - s.x, dz = z.z - s.z, d = Math.hypot(dx, dz);
+    if (!s.jagt && d < wahr) { s.jagt = true; if (d > 12) meldung(zufallswahl(['Hinter dir knackt etwas.', 'Ein kalter Hauch streift deinen Nacken.', 'Du hörst langsame, schwere Schritte.']), 'gefahr'); }
+    if (s.jagt && d > wahr * 1.6) s.jagt = false;
+    let tx, tz, tempo;
+    if (s.jagt) { tx = dx / d; tz = dz / d; tempo = 3.8; }
+    else {
+      if (!s.ziel || Math.hypot(s.ziel.x - s.x, s.ziel.z - s.z) < 2) s.ziel = { x: s.x + (Math.random() - 0.5) * 50, z: s.z + (Math.random() - 0.5) * 50 };
+      const ex = s.ziel.x - s.x, ez = s.ziel.z - s.z, el2 = Math.hypot(ex, ez) || 1;
+      tx = ex / el2; tz = ez / el2; tempo = 1.4;
+    }
+    const nx = s.x + tx * tempo * dt, nz = s.z + tz * tempo * dt;
+    if (schattenDarf(nx, nz)) { s.x = nx; s.z = nz; } else { s.ziel = null; }
+    s.phase += dt;
+    const h = hoeheBei(s.x, s.z);
+    s.mesh.position.set(s.x, h + 0.2 + Math.sin(s.phase * 2.2) * 0.15, s.z);
+    s.mesh.rotation.y = Math.atan2(z.x - s.x, z.z - s.z);
+    naechster = Math.min(naechster, d);
+    if (d < 1.9 && z.pause <= 0 && !z.modalOffen && !imSchutz(z.x, z.z)) begegnung(s);
+  });
+  return naechster;
+}
+
+function begegnung(s) {
+  gefahrTon();
+  const fackelOk = z.fackelAn && z.fackel >= 8;
+  oeffneModal('Der Schatten', 'Er steht direkt vor dir. Rote Augen, keine Gestalt, nur Kälte. Dir bleibt ein Atemzug.', [
+    { text: fackelOk ? 'Fackel schwenken' : 'Fackel schwenken (brennt nicht)', aus: !fackelOk, klick: () => {
+      W.gruppe.remove(s.mesh); W.schatten = W.schatten.filter(x => x !== s); z.pause = 4;
+      ergebnis('Der Schatten weicht', 'Er zerfällt vor dem Feuer zu Rauch.', { fackel: -8, mut: -3 });
+    } },
+    { text: 'Wegrennen', klick: () => {
+      z.pause = 4; schattenWegsetzen(s);
+      if (Math.random() < 0.5) ergebnis('Entkommen', 'Du rennst, bis die Lunge brennt. Hinter dir wird es still.', { mut: -4, wasser: -4 });
+      else ergebnis('Erwischt', 'Eine Hand aus Kälte streift deinen Rücken. Du kommst frei, aber dein Herz setzt aus.', { mut: -25 });
+    } },
+    { text: 'Regungslos verharren', klick: () => {
+      z.pause = 4;
+      const imWald = rasterWert(W.wald, z.x, z.z) > 0.55 && hoeheBei(z.x, z.z) > 2;
+      const geschafft = Math.random() < (imWald ? 0.7 : 0.35);
+      schattenWegsetzen(s);
+      if (geschafft) ergebnis('Unbemerkt', 'Der Schatten gleitet durch dich hindurch, kalt wie Eiswasser, und zieht weiter.', { mut: -5 });
+      else ergebnis('Entdeckt', 'Zwei rote Augen sind plötzlich ganz nah. Du spürst, wie dir etwas entzogen wird.', { mut: -30 });
+    } }
+  ]);
+}
+
+/* ============================================================
+   Steuerung
+   ============================================================ */
+const eingabe = { jx: 0, jy: 0, id: null, bx: 0, by: 0, blickId: null, lx: 0, ly: 0 };
+const tasten = new Set();
+const steuer = el('steuerflaeche');
+const joy = el('joystick'), knauf = el('knauf');
+
+steuer.addEventListener('pointerdown', e => {
+  audioStarten();
+  if (!z || !z.imSpiel || pausiert()) return;
+  e.preventDefault();
+  const links = e.clientX < window.innerWidth * 0.45 && e.pointerType !== 'mouse';
+  if (links && eingabe.id === null) {
+    eingabe.id = e.pointerId; eingabe.bx = e.clientX; eingabe.by = e.clientY;
+    joy.style.left = e.clientX + 'px'; joy.style.top = e.clientY + 'px'; joy.hidden = false;
+    knauf.style.transform = 'translate(0,0)';
+  } else if (eingabe.blickId === null) {
+    eingabe.blickId = e.pointerId; eingabe.lx = e.clientX; eingabe.ly = e.clientY;
+  }
+  try { steuer.setPointerCapture(e.pointerId); } catch (f) { /* egal */ }
+});
+steuer.addEventListener('pointermove', e => {
+  if (e.pointerId === eingabe.id) {
+    let dx = e.clientX - eingabe.bx, dy = e.clientY - eingabe.by;
+    const max = 55, l = Math.hypot(dx, dy);
+    if (l > max) { dx = dx / l * max; dy = dy / l * max; }
+    eingabe.jx = dx / max; eingabe.jy = dy / max;
+    knauf.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    knauf.classList.toggle('rennt', Math.hypot(eingabe.jx, eingabe.jy) > 0.92);
+  } else if (e.pointerId === eingabe.blickId && z && !pausiert()) {
+    z.yaw -= (e.clientX - eingabe.lx) * EMPFINDLICHKEIT;
+    z.pitch = klemme(z.pitch - (e.clientY - eingabe.ly) * EMPFINDLICHKEIT, -1.2, 1.1);
+    eingabe.lx = e.clientX; eingabe.ly = e.clientY;
+  }
+});
+function loslassen(e) {
+  if (e.pointerId === eingabe.id) { eingabe.id = null; eingabe.jx = 0; eingabe.jy = 0; joy.hidden = true; }
+  if (e.pointerId === eingabe.blickId) eingabe.blickId = null;
+}
+steuer.addEventListener('pointerup', loslassen);
+steuer.addEventListener('pointercancel', loslassen);
+function eingabeZuruecksetzen() { eingabe.id = null; eingabe.blickId = null; eingabe.jx = 0; eingabe.jy = 0; joy.hidden = true; tasten.clear(); }
+
+window.addEventListener('keydown', e => {
+  tasten.add(e.key.toLowerCase());
+  if (e.key === 'f' || e.key === 'F') fackelUmschalten();
+  if (e.key === 'e' || e.key === 'E') aktionAusfuehren();
+  if (e.key === 'Escape') menueOeffnen();
+});
+window.addEventListener('keyup', e => tasten.delete(e.key.toLowerCase()));
+
+function richtungsEingabe() {
+  let jx = eingabe.jx, jy = eingabe.jy;
+  if (tasten.has('w') || tasten.has('arrowup')) jy = -1;
+  if (tasten.has('s') || tasten.has('arrowdown')) jy = 1;
+  if (tasten.has('a') || tasten.has('arrowleft')) jx = -1;
+  if (tasten.has('d') || tasten.has('arrowright')) jx = 1;
+  const l = Math.hypot(jx, jy);
+  if (l > 1) { jx /= l; jy /= l; }
+  return { jx, jy, staerke: Math.min(1, l), rennt: l > 0.92 || tasten.has('shift') };
+}
+
+const pausiert = () => !z || z.vorbei || z.modalOffen || z.menueOffen;
+
+/* ============================================================
+   Spielablauf pro Bild
+   ============================================================ */
+let wippen = 0, naechsterSchatten = 999;
+
+function aktualisiereSpiel(dt) {
+  // Zeit
+  zeitVergeht(dt / SEK_PRO_STUNDE);
+  if (z.vorbei) return;
+
+  // Bewegung
+  const ein = richtungsEingabe();
+  let bewegt = 0;
+  if (ein.staerke > 0.05) {
+    const tempo = (ein.rennt ? RENNEN : GEHEN) * ein.staerke;
+    const sin = Math.sin(z.yaw), cos = Math.cos(z.yaw);
+    const vor = -ein.jy, seit = ein.jx;
+    let dx = (-sin * vor + cos * seit) * tempo * dt;
+    let dz = (-cos * vor - sin * seit) * tempo * dt;
+    const hJetzt = hoeheBei(z.x, z.z);
+    const imWasser = hJetzt < 0;
+    if (imWasser) { dx *= 0.6; dz *= 0.6; }
+    const versuche = [[dx, dz], [dx, 0], [0, dz]];
+    for (const [vx, vz] of versuche) {
+      const nx = klemme(z.x + vx, -HALB + 2, HALB - 2), nz = klemme(z.z + vz, -HALB + 2, HALB - 2);
+      const hNeu = hoeheBei(nx, nz);
+      if (hNeu < -0.6) continue;
+      const weg = Math.hypot(nx - z.x, nz - z.z);
+      const anstieg = (hNeu - hJetzt) / Math.max(weg, 0.0001);
+      if (anstieg > 1.6) continue;
+      const bremse = anstieg > 0 ? 1 / (1 + anstieg * 0.9) : 1;
+      z.x += (nx - z.x) * bremse; z.z += (nz - z.z) * bremse;
+      bewegt = weg * bremse;
+      break;
+    }
+    if (bewegt > 0) {
+      wippen += bewegt * (ein.rennt ? 1.6 : 1.9);
+      z.schrittWeg += bewegt;
+      const schritt = ein.rennt ? 2.1 : 1.6;
+      if (z.schrittWeg > schritt) { z.schrittWeg = 0; schrittTon(hoeheBei(z.x, z.z) < 0.05); }
+    }
+  }
+
+  // Verbrauch
+  const proStunde = dt / SEK_PRO_STUNDE;
+  z.wasser = Math.max(0, z.wasser - 2.6 * proStunde * (bewegt > 0 && ein.rennt ? 2 : 1));
+  if (z.fackelAn) {
+    z.fackel = Math.max(0, z.fackel - 9 * proStunde);
+    if (z.fackel <= 0) { z.fackelAn = false; meldung('Deine Fackel erlischt.', 'gefahr'); hudWerte(); }
+  }
+  if (z.wasser <= 0) z.mut = Math.max(0, z.mut - 5 * proStunde);
+  if (z.mut <= 0) { ende('nerven'); return; }
+
+  // Entdecken
+  z.aufdeckTakt -= dt;
+  if (z.aufdeckTakt <= 0) {
+    z.aufdeckTakt = 0.25;
+    const nacht = istNacht();
+    aufdecken(nacht ? (z.fackelAn ? 18 : 10) : 32);
+    pruefeOrte(nacht);
+  }
+
+  // Schatten
+  if (z.pause > 0) z.pause -= dt;
+  naechsterSchatten = W.schatten.length ? bewegeSchatten(dt) : 999;
+  if (z.modalOffen) return;
+  if (naechsterSchatten < 28) {
+    z.herzIn -= dt;
+    if (z.herzIn <= 0) { herzschlag(); z.herzIn = 0.45 + naechsterSchatten / 28 * 1.0; }
+  }
+
+  // Zufällige Ereignisse beim Laufen
+  if (bewegt > 0) {
+    z.ereignisIn -= dt;
+    if (z.ereignisIn <= 0 && !naheOrt()) { z.ereignisIn = 60 + Math.random() * 55; zufallsEreignis(); return; }
+  }
+  z.ambienteIn -= dt;
+  if (z.ambienteIn <= 0) { z.ambienteIn = 45 + Math.random() * 40; meldung(zufallswahl(istNacht() ? AMBIENTE_NACHT : AMBIENTE_TAG)); }
+}
+
+function pruefeOrte(nacht) {
+  const sicht = nacht ? (z.fackelAn ? 18 : 12) : 26;
+  z.pois.forEach(p => {
+    const d = Math.hypot(p.x - z.x, p.z - z.z);
+    if (!p.bekannt && d < Math.max(sicht, ORTE[p.art].radius + 2)) {
+      p.bekannt = true;
+      meldung('Entdeckt: ' + ORTE[p.art].name + '.', SIEGEL_ORTE.includes(p.art) ? 'hinweis' : '');
+      if (SIEGEL_ORTE.includes(p.art)) ton(784, 0.4, 'triangle', 0.08);
+    }
+    if (SIEGEL_ORTE.includes(p.art) && !p.bekannt && !p.hinweis && d < 60) {
+      p.hinweis = true;
+      const r = himmelsrichtung(p.x - z.x, p.z - z.z);
+      const texte = {
+        tempel: 'Im Gras liegen Marmorsplitter. Ein Tempel muss im ' + r + ' stehen.',
+        hoehle: 'Ein kalter, feuchter Luftzug kommt aus dem ' + r + '. Vielleicht eine Höhle.',
+        ruine: 'Im ' + r + ' schimmern zwischen den Bäumen behauene Steine.',
+        gipfel: 'Im ' + r + ' ragt der höchste Gipfel auf. Von dort oben sähe man die ganze Insel.'
+      };
+      meldung(texte[p.art], 'hinweis');
+    }
+  });
+}
+
+function naheOrt() {
+  let bester = null, bd = 1e9;
+  z.pois.forEach(p => {
+    const d = Math.hypot(p.x - z.x, p.z - z.z);
+    if (d < ORTE[p.art].radius && d < bd) { bd = d; bester = p; }
+  });
+  return bester;
+}
+
+function ortAktiv(p) {
+  if (!p) return false;
+  if (SIEGEL_ORTE.includes(p.art) && p.erledigt) return false;
+  if (p.art === 'wrack' && p.durchsucht) return false;
+  return true;
+}
+
+/* ============================================================
+   Kamera, Licht, Animation
+   ============================================================ */
+const himmelFarbe = { zenitTag: hex(0x3f86c9), zenitNacht: hex(0x03060f), horizontTag: hex(0xa9d3ec), horizontNacht: hex(0x0a1426), abendrot: hex(0xf09a62), zenitAbend: hex(0x4b5a8a), sturm: hex(0x2a3038) };
+const _zenit = new THREE.Color(), _horizont = new THREE.Color(), _tmp = new THREE.Color();
+const sonnenRichtung = new THREE.Vector3();
+let titelWinkel = 0;
+
+function setzeLicht(uhr, sturmAnteil, mitFackel, flackern) {
+  const hoehe = Math.sin((uhr - 6) / 12 * Math.PI);
+  const tag = glatt(-0.12, 0.25, hoehe);
+  const rot = klemme(1 - Math.abs(hoehe - 0.06) / 0.3, 0, 1) * 0.85;
+
+  _zenit.copy(himmelFarbe.zenitNacht).lerp(himmelFarbe.zenitTag, tag).lerp(himmelFarbe.zenitAbend, rot * 0.6).lerp(himmelFarbe.sturm, sturmAnteil * 0.55);
+  _horizont.copy(himmelFarbe.horizontNacht).lerp(himmelFarbe.horizontTag, tag).lerp(himmelFarbe.abendrot, rot).lerp(himmelFarbe.sturm, sturmAnteil * 0.6);
+  const pos = himmelGeo.attributes.position, col = himmelGeo.attributes.color;
+  for (let i = 0; i < pos.count; i++) {
+    const t = Math.pow(klemme(pos.getY(i) / 500, 0, 1), 0.55);
+    _tmp.copy(_horizont).lerp(_zenit, t);
+    col.setXYZ(i, _tmp.r, _tmp.g, _tmp.b);
+  }
+  col.needsUpdate = true;
+  szene.fog.color.copy(_horizont);
+  const nahNacht = mitFackel ? 6 : 3, fernNacht = mitFackel ? 52 : 34;
+  szene.fog.near = (nahNacht + (40 - nahNacht) * tag) * (1 - sturmAnteil * 0.4);
+  szene.fog.far = (fernNacht + (250 - fernNacht) * tag) * (1 - sturmAnteil * 0.45);
+
+  const w = (uhr - 6) / 12 * Math.PI;
+  sonnenRichtung.set(Math.cos(w), Math.sin(w), 0.35).normalize();
+  const tagsueber = hoehe > -0.05;
+  const lichtRichtung = tagsueber ? sonnenRichtung : _v1.copy(sonnenRichtung).negate().setZ(0.35).normalize();
+  sonne.position.copy(kamera.position).addScaledVector(lichtRichtung, 100);
+  sonne.target.position.copy(kamera.position);
+  sonne.intensity = (tag * 2.6 + (1 - tag) * 0.32) * (1 - sturmAnteil * 0.5);
+  sonne.color.copy(hex(0x8fa6ff)).lerp(hex(0xfff0d8), tag).lerp(hex(0xffad6a), rot * 0.7);
+  himmelLicht.intensity = (0.18 + tag * 1.0) * (1 - sturmAnteil * 0.3);
+  himmelLicht.color.copy(_horizont).lerp(hex(0xffffff), 0.4);
+
+  himmel.position.copy(kamera.position);
+  sterne.position.copy(kamera.position);
+  sterne.material.opacity = (1 - tag) * 0.9 * (1 - sturmAnteil);
+  sonnenScheibe.visible = hoehe > -0.15 && sturmAnteil < 0.7;
+  sonnenScheibe.position.copy(kamera.position).addScaledVector(sonnenRichtung, 430);
+  sonnenScheibe.material.color.copy(hex(0xfff6d8)).lerp(hex(0xff9a50), rot);
+  mondScheibe.visible = hoehe < 0.15 && sturmAnteil < 0.7;
+  mondScheibe.position.copy(kamera.position).addScaledVector(_v2.copy(sonnenRichtung).negate().setZ(0.35).normalize(), 430);
+
+  if (W && W.wasser) W.wasser.material.color.copy(hex(0x0b2235)).lerp(hex(0x2a86a8), tag).lerp(himmelFarbe.sturm, sturmAnteil * 0.5);
+  fackelLicht.intensity = mitFackel ? (8 + (1 - tag) * 70) * flackern : 0;
+  renderer.toneMappingExposure = 1.0 + (1 - tag) * 0.25;
+}
+const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3();
+
+function animiere(dt, t) {
+  if (!W) return;
+  W.wasser.position.y = Math.sin(t * 0.7) * 0.07;
+  W.feuer.forEach((f, i) => {
+    const fl = 0.85 + Math.sin(t * 11 + i) * 0.1 + Math.sin(t * 23 + i * 3) * 0.06;
+    f.feuer.scale.set(1, fl, 1);
+    f.licht.intensity = (istNachtFuer() ? 14 : 4) * fl;
+  });
+  W.kugeln.forEach((k, i) => {
+    if (!k) return;
+    k.visible = !z || !z.pois[i].erledigt;
+    k.rotation.y += dt;
+    k.position.y += Math.sin(t * 2 + i) * 0.002;
+  });
+  const alleSiegel = z && Object.values(z.siegel).every(Boolean);
+  W.leuchten.forEach(l => {
+    const p = l.poi;
+    if (p.art === 'tor') {
+      l.mesh.material.opacity = alleSiegel ? 0.28 + Math.sin(t * 3) * 0.08 : 0.1;
+      l.mesh.material.color.set(alleSiegel ? 0xffd27a : 0x9fd4ff);
+    } else {
+      l.mesh.visible = !!z && p.bekannt && !p.erledigt;
+      l.mesh.material.opacity = 0.12 + Math.sin(t * 2) * 0.04;
+    }
+  });
+  if (W.tor && z) {
+    const namen = ['weisheit', 'tapferkeit', 'erinnerung', 'himmel'];
+    W.tor.kugeln.forEach((k, i) => {
+      const da = z.siegel[namen[i]];
+      k.material.emissive.set(da ? 0xe2a030 : 0x000000);
+      k.material.emissiveIntensity = da ? 1.5 : 0;
+      k.material.color.set(da ? 0xffd36b : 0x3a3530);
+    });
+    W.tor.portal.material.opacity = alleSiegel ? 0.35 + Math.sin(t * 2.5) * 0.15 : 0;
+  }
+  if (W.schatten) W.schatten.forEach(s => { s.mesh.userData.augen.color.setRGB(1, 0.15 + Math.sin(t * 9 + s.phase) * 0.1, 0.15); });
+
+  // Fackel in der Hand
+  fackelModell.visible = !!z && z.imSpiel && z.fackelAn;
+  if (fackelModell.visible) {
+    const [a, b] = fackelModell.userData.flammen;
+    const fl = 0.85 + Math.sin(t * 17) * 0.1 + Math.sin(t * 29) * 0.07;
+    a.scale.set(1, fl, 1); b.scale.set(1, fl * 1.05, 1);
+    fackelModell.position.y = -0.5 + Math.sin(wippen * 2) * 0.015;
+  }
+
+  // Regen im Sturm
+  const sturm = z ? glatt(14, 2, STURM_STUNDE - z.stunde) : 0;
+  regen.visible = sturm > 0.05;
+  if (regen.visible) {
+    const p = regenGeo.attributes.position.array;
+    for (let i = 0; i < regenAnzahl; i++) {
+      p[i * 3 + 1] -= 26 * dt; p[i * 3] += 4 * dt;
+      if (p[i * 3 + 1] < -2) { p[i * 3 + 1] = 28; p[i * 3] = (Math.random() - 0.5) * 60; p[i * 3 + 2] = (Math.random() - 0.5) * 60; }
+    }
+    regenGeo.attributes.position.needsUpdate = true;
+    regen.position.set(kamera.position.x, kamera.position.y - 6, kamera.position.z);
+    regen.material.opacity = 0.55 * sturm;
+  }
+}
+const istNachtFuer = () => z ? istNacht() : false;
+
+function spielerKamera() {
+  const h = Math.max(hoeheBei(z.x, z.z), -0.4);
+  const ziel = h + AUGENHOEHE + Math.sin(wippen * 2) * 0.05;
+  kamera.position.x = z.x; kamera.position.z = z.z;
+  kamera.position.y += (ziel - kamera.position.y) * 0.25;
+  if (Math.abs(ziel - kamera.position.y) > 4) kamera.position.y = ziel;
+  kamera.rotation.set(z.pitch, z.yaw, 0);
+}
+
+function titelKamera(dt) {
+  titelWinkel += dt * 0.04;
+  kamera.position.set(Math.cos(titelWinkel) * 150, 55, Math.sin(titelWinkel) * 150);
+  kamera.lookAt(0, 6, 0);
+}
+
+/* ============================================================
+   HUD
+   ============================================================ */
+let hudTakt = 0;
+function hudWerte() {
+  el('uhr').textContent = uhrText();
+  const rest = Math.max(0, STURM_STUNDE - z.stunde);
+  el('sturm').textContent = rest < 1 ? 'Der Sturm ist da' : 'Sturm in ' + Math.ceil(rest) + ' Std.';
+  el('sturm').classList.toggle('warn', rest <= 12);
+  el('lWasser').style.width = z.wasser + '%';
+  el('lFackel').style.width = z.fackel + '%';
+  el('lMut').style.width = z.mut + '%';
+  el('fackelKnopf').classList.toggle('an', z.fackelAn);
+  el('siegelLeiste').innerHTML = Object.keys(SIEGEL_INFO).map(k => '<b class="' + (z.siegel[k] ? 'da' : '') + '">' + SIEGEL_INFO[k].symbol + '</b>').join('');
+}
+
+function hudBild(dt) {
+  hudTakt -= dt;
+  if (hudTakt <= 0) {
+    hudTakt = 0.25;
+    hudWerte();
+    const p = naheOrt();
+    const knopf = el('aktionKnopf');
+    if (ortAktiv(p)) { knopf.hidden = false; knopf.textContent = ORTE[p.art].aktion; } else knopf.hidden = true;
+    if (windGain) windGain.gain.value = tonAn ? 0.04 + (istNacht() ? 0.04 : 0) + glatt(24, 0, STURM_STUNDE - z.stunde) * 0.12 : 0;
+  }
+  // Kompass
+  const breite = el('kompass').clientWidth, sichtWinkel = 1.6;
+  W.markierungen.forEach(m => {
+    let w;
+    if (m.poi) {
+      if (!m.poi.bekannt || (SIEGEL_ORTE.includes(m.poi.art) && m.poi.erledigt)) { m.el.style.display = 'none'; return; }
+      w = Math.atan2(-(m.poi.x - z.x), -(m.poi.z - z.z));
+    } else w = m.winkel;
+    const rel = winkelNorm(w - z.yaw);
+    if (Math.abs(rel) > sichtWinkel) { m.el.style.display = 'none'; return; }
+    m.el.style.display = '';
+    m.el.style.left = (breite / 2 - rel / sichtWinkel * breite / 2) + 'px';
+  });
+  // Minikarte
+  z.kartenTakt -= dt;
+  if (z.kartenTakt <= 0) { z.kartenTakt = 0.1; zeichneKarte(); }
+  // Roter Rand bei Gefahr
+  const g = el('gefahr');
+  if (naechsterSchatten < 30) {
+    const s = 1 - naechsterSchatten / 30;
+    g.style.boxShadow = 'inset 0 0 ' + Math.round(60 + 90 * s) + 'px rgba(200,20,20,' + (0.15 + 0.55 * s).toFixed(2) + ')';
+  } else g.style.boxShadow = 'none';
+}
+
+let meldungZuletzt = '';
+function meldung(text, art) {
+  if (text === meldungZuletzt) return;
+  meldungZuletzt = text;
+  setTimeout(() => { if (meldungZuletzt === text) meldungZuletzt = ''; }, 4000);
+  const box = el('meldungen');
+  const m = document.createElement('div');
+  m.className = 'meldung ' + (art || '');
+  m.textContent = text;
+  box.appendChild(m);
+  while (box.children.length > 2) box.removeChild(box.firstChild);
+  setTimeout(() => m.remove(), 6200);
+  if (z) { z.tagebuch.push(text); if (z.tagebuch.length > 40) z.tagebuch.shift(); }
+}
+
+/* ============================================================
+   Fenster (Ereignisse, Rätsel)
+   ============================================================ */
+function oeffneModal(titel, text, optionen) {
+  z.modalOffen = true;
+  eingabeZuruecksetzen();
+  el('modalTitel').textContent = titel;
+  el('modalText').textContent = text || '';
+  el('modalText').hidden = !text;
+  const inhalt = el('modalInhalt'); inhalt.innerHTML = '';
+  const box = el('modalOptionen'); box.innerHTML = '';
+  (optionen || []).forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'wahl'; b.textContent = o.text; b.disabled = !!o.aus;
+    b.addEventListener('click', () => { schliesseModal(); o.klick(); });
+    box.appendChild(b);
+  });
+  el('modal').classList.add('offen');
+  el('modal').querySelector('.platte').scrollTop = 0;
+  return inhalt;
+}
+function schliesseModal() { if (z) z.modalOffen = false; el('modal').classList.remove('offen'); }
+
+// Zeigt ein Ergebnis an. Die Werte gelten erst nach "Weiter". Zeit: 1 Einheit = 15 Minuten.
+function ergebnis(titel, text, e, danach) {
+  e = e || {};
+  const chips = [];
+  const chip = (name, wert) => { if (wert) chips.push('<span class="chip ' + (wert > 0 ? 'plus' : 'minus') + '">' + name + ' ' + (wert > 0 ? '+' : '') + Math.round(wert) + '</span>'); };
+  chip('Wasser', e.wasser); chip('Fackel', e.fackel); chip('Mut', e.mut);
+  if (e.zeit) chips.push('<span class="chip">Zeit +' + (e.zeit * 15 >= 60 ? (e.zeit / 4).toLocaleString('de-CH') + ' Std.' : e.zeit * 15 + ' Min.') + '</span>');
+  const inhalt = oeffneModal(titel, text, [{ text: 'Weiter', klick: () => {
+    wendeAn(e);
+    if (z.vorbei) return;
+    if (e.zeit) zeitVergeht(e.zeit / 4);
+    if (z.vorbei || z.modalOffen) return;
+    if (danach) danach();
+  } }]);
+  if (chips.length) inhalt.innerHTML = '<div class="chips">' + chips.join('') + '</div>';
+}
+
+function wendeAn(e) {
+  if (e.wasser) z.wasser = klemme(z.wasser + e.wasser, 0, 100);
+  if (e.fackel) z.fackel = klemme(z.fackel + e.fackel, 0, 100);
+  if (e.mut) { z.mut = klemme(z.mut + e.mut, 0, 100); kleinerTon(e.mut > 0); }
+  if (e.fackelAus || z.fackel <= 0) z.fackelAn = false;
+  hudWerte();
+  if (!z.vorbei && z.mut <= 0) ende('nerven');
+}
+
+/* ============================================================
+   Aktionen
+   ============================================================ */
+function fackelUmschalten() {
+  if (!z || pausiert()) return;
+  if (z.fackel <= 0) { meldung('Du hast kein Öl mehr für die Fackel.', 'gefahr'); return; }
+  z.fackelAn = !z.fackelAn;
+  ton(z.fackelAn ? 300 : 200, 0.2, 'triangle', 0.06);
+  if (z.fackelAn && istNacht()) meldung('Die Fackel brennt. Du siehst mehr, aber das Licht verrät dich.');
+  hudWerte();
+}
+function aktionAusfuehren() {
+  if (!z || pausiert()) return;
+  const p = naheOrt();
+  if (ortAktiv(p)) ortBetreten(p);
+}
+
+function menueOeffnen() {
+  if (!z || !z.imSpiel || z.vorbei || z.modalOffen) return;
+  z.menueOffen = true; eingabeZuruecksetzen();
+  el('tagebuch').innerHTML = z.tagebuch.slice(-8).reverse().map(t => '<div>' + t.replace(/</g, '&lt;') + '</div>').join('');
+  el('mTon').textContent = tonAn ? 'Ton ausschalten' : 'Ton einschalten';
+  el('menue').classList.add('offen');
+}
+function menueSchliessen() { z.menueOffen = false; el('menue').classList.remove('offen'); }
+
+el('fackelKnopf').addEventListener('click', fackelUmschalten);
+el('aktionKnopf').addEventListener('click', aktionAusfuehren);
+el('menueKnopf').addEventListener('click', menueOeffnen);
+el('mWeiter').addEventListener('click', menueSchliessen);
+el('mRasten').addEventListener('click', () => {
+  menueSchliessen();
+  ergebnis('Rast', istNacht() ? 'Du kauerst dich zusammen und lauschst in die Dunkelheit.' : 'Du setzt dich in den Schatten und kommst zu Atem.', { mut: 10, wasser: -3, zeit: 6 });
+});
+el('mTon').addEventListener('click', () => { tonAn = !tonAn; el('mTon').textContent = tonAn ? 'Ton ausschalten' : 'Ton einschalten'; });
+el('mTitel').addEventListener('click', () => { speichere(); menueSchliessen(); zumTitel(); });
+
+/* ============================================================
+   Orte
+   ============================================================ */
+function ortBetreten(p) {
+  ({ quelle: quelleAktion, lager: lagerAktion, dorf: dorfAktion, wrack: wrackAktion, tempel: tempelAktion,
+     hoehle: hoehleAktion, ruine: ruineAktion, gipfel: gipfelAktion, tor: torAktion })[p.art](p);
+}
+
+function quelleAktion() {
+  ergebnis('Quelle', 'Kühles Wasser sprudelt aus dem Fels. Du füllst deinen Schlauch und trinkst dich satt.', { wasser: 100, mut: 3 });
+}
+
+function lagerAktion(p) {
+  oeffneModal('Altes Lager', 'Eine Feuerstelle, zerrissene Decken, ein umgekippter Karren. Die Glut ist noch warm. Hier kommen die Schatten nicht hin.', [
+    { text: 'Vorräte durchsuchen', aus: p.durchsucht, klick: () => { p.durchsucht = true; ergebnis('Vorräte', 'Unter dem Karren stecken ein Krug Öl und ein halbvoller Wasserschlauch.', { fackel: 30, wasser: 20, zeit: 2 }); } },
+    { text: 'Am Feuer rasten (2,5 Stunden)', klick: () => ergebnis('Rast', 'Du wärmst dich auf. Eine Weile ist alles ruhig.', { mut: 25, zeit: 10 }) },
+    { text: 'Weitergehen', klick: () => {} }
+  ]);
+}
+
+function dorfAktion(p) {
+  oeffneModal('Verlassenes Dorf', 'Weisse Häuser, blaue Türen, leere Fenster. Auf einer Bank sitzt eine Gestalt, die dich ansieht, bevor du sie bemerkst.', [
+    { text: 'Mit der Gestalt sprechen', aus: p.gesprochen, klick: () => {
+      p.gesprochen = true;
+      const unbekannt = z.pois.filter(q => SIEGEL_ORTE.includes(q.art) && !q.erledigt && !q.bekannt);
+      if (unbekannt.length) {
+        const ziel = zufallswahl(unbekannt); ziel.bekannt = true; ziel.hinweis = true;
+        ergebnis('Die Gestalt', 'Sie sagt kein Wort, sondern zeigt in eine Richtung. Dort, im ' + himmelsrichtung(ziel.x - z.x, ziel.z - z.z) + ', liegt ' + ORTE[ziel.art].name + '. Eine goldene Lichtsäule steigt dort auf.', { mut: 5 });
+      } else ergebnis('Die Gestalt', 'Sie nickt nur. Du kennst schon alles, was sie dir zeigen könnte.', { mut: 5 });
+    } },
+    { text: 'Häuser durchsuchen', aus: p.durchsucht, klick: () => {
+      p.durchsucht = true;
+      if (Math.random() < 0.7) ergebnis('Im Keller', 'Ein Fass Lampenöl und ein Tonkrug mit Wasser. Beides ist noch gut.', { fackel: 35, wasser: 25, zeit: 3 });
+      else ergebnis('Über dir', 'Im Obergeschoss knarrt ein Dielenbrett. Du flüchtest mit leeren Händen.', { mut: -10, zeit: 1 });
+    } },
+    { text: 'Weitergehen', klick: () => {} }
+  ]);
+}
+
+function wrackAktion(p) {
+  oeffneModal('Schiffswrack', 'Ein Rumpf, halb im Sand vergraben. Das Holz ächzt, wenn die Wellen dagegen drücken.', [
+    { text: 'Den Laderaum durchsuchen', klick: () => {
+      p.durchsucht = true;
+      if (Math.random() < 0.6) ergebnis('Fund', 'Hinter einer Kiste stehen Ölkrüge und ein Fass Süsswasser.', { fackel: 30, wasser: 20, zeit: 2 });
+      else ergebnis('Etwas lebt hier', 'Im Dunkeln zischt es. Du stolperst nach draussen, mit pochendem Herz.', { mut: -10, zeit: 1 });
+    } },
+    { text: 'Weitergehen', klick: () => {} }
+  ]);
+}
+
+function siegelErhalten(p, text) {
+  const k = SIEGEL_NAME[p.art];
+  p.erledigt = true; z.siegel[k] = true;
+  siegelTon(); hudWerte();
+  const anzahl = Object.values(z.siegel).filter(Boolean).length;
+  ergebnis(SIEGEL_INFO[k].name, text, { mut: 15 }, () => {
+    if (anzahl === 4) meldung('Alle vier Siegel gehören dir. Das Tor in der Inselmitte leuchtet golden.', 'hinweis');
+    else meldung('Noch ' + (4 - anzahl) + ' Siegel fehlen.', 'hinweis');
+    speichere();
+  });
+}
+
+const FRAGEN = [
+  { f: 'Wer ist der griechische Gott des Meeres?', a: ['Poseidon', 'Hades', 'Apollon', 'Ares'] },
+  { f: 'Wie heisst das Ungeheuer im Labyrinth von Kreta?', a: ['Minotaurus', 'Kyklop', 'Hydra', 'Chimäre'] },
+  { f: 'Wer schlug der Medusa den Kopf ab?', a: ['Perseus', 'Achilles', 'Odysseus', 'Theseus'] },
+  { f: 'Wer brachte den Menschen das Feuer?', a: ['Prometheus', 'Hermes', 'Atlas', 'Orpheus'] },
+  { f: 'Wie heisst der höchste Berg Griechenlands?', a: ['Olymp', 'Parnass', 'Athos', 'Pilion'] },
+  { f: 'Wer half Theseus mit einem Faden aus dem Labyrinth?', a: ['Ariadne', 'Penelope', 'Helena', 'Kassandra'] },
+  { f: 'Welcher Fluss trennt die Lebenden von der Unterwelt?', a: ['Styx', 'Nil', 'Tiber', 'Rhein'] },
+  { f: 'Welche Göttin steht für Weisheit und Kriegslist?', a: ['Athene', 'Aphrodite', 'Demeter', 'Hera'] },
+  { f: 'Wie viele Aufgaben musste Herakles erfüllen?', a: ['Zwölf', 'Sieben', 'Zehn', 'Neun'] },
+  { f: 'Wer trägt geflügelte Schuhe und bringt den Göttern Botschaften?', a: ['Hermes', 'Apollon', 'Dionysos', 'Hephaistos'] },
+  { f: 'Welche Stadt fiel durch ein hölzernes Pferd?', a: ['Troja', 'Sparta', 'Theben', 'Korinth'] },
+  { f: 'Wer herrscht über die Unterwelt?', a: ['Hades', 'Zeus', 'Poseidon', 'Kronos'] },
+  { f: 'Auf welcher Insel soll Apollon geboren worden sein?', a: ['Delos', 'Rhodos', 'Korfu', 'Naxos'] },
+  { f: 'Auf welcher Insel liegt der Palast von Knossos?', a: ['Kreta', 'Rhodos', 'Korfu', 'Mykonos'] }
+];
+
+function tempelAktion(p) {
+  oeffneModal('Tempel der Athene', 'Eine Marmorfigur bewacht den Altar. Ihre Augen folgen dir. Sie stellt drei Fragen, zwei richtige Antworten genügen.', [
+    { text: 'Antworten', klick: () => tempelFragen(p) },
+    { text: 'Später wiederkommen', klick: () => {} }
+  ]);
+}
+function tempelFragen(p) {
+  const fragen = mische(FRAGEN).slice(0, 3);
+  let nr = 0, richtig = 0;
+  const naechste = () => {
+    if (nr >= 3) {
+      if (richtig >= 2) siegelErhalten(p, 'Die Figur neigt den Kopf. Das Siegel löst sich vom Altar und liegt warm in deiner Hand.');
+      else ergebnis('Verschlossen', 'Die Figur schweigt. Das Siegel bleibt auf dem Altar. Du kannst es später nochmal versuchen.', { mut: -10, zeit: 3 });
+      return;
+    }
+    const frage = fragen[nr];
+    const optionen = mische(frage.a.map((text, i) => ({ text, ok: i === 0 })));
+    oeffneModal('Frage ' + (nr + 1) + ' von 3', frage.f, optionen.map(o => ({ text: o.text, klick: () => {
+      nr++;
+      if (o.ok) { richtig++; ergebnis('Richtig', 'Der Marmor leuchtet kurz auf.', {}, naechste); }
+      else ergebnis('Falsch', 'Der Boden bebt leicht. Die Figur sieht dich enttäuscht an.', { mut: -8 }, naechste);
+    } })));
+  };
+  naechste();
+}
+
+function hoehleAktion(p) {
+  oeffneModal('Höhle', 'Ein Spalt im Fels, kaum breit genug für eine Schulter. Dahinter ein Gang mit drei Abzweigungen. Ohne Licht wirst du dich verirren.', [
+    { text: 'Hineingehen', klick: () => hoehleGang(p, 0) },
+    { text: 'Erst vorbereiten', klick: () => {} }
+  ]);
+}
+function hoehleGang(p, stufe) {
+  if (stufe >= 3) { siegelErhalten(p, 'Am Ende des Gangs liegt ein Siegel auf einem Stein. Eine Fledermaus umkreist dich, dann ist alles still.'); return; }
+  const wege = ['links', 'geradeaus', 'rechts'], richtig = zufallswahl(wege);
+  const hell = z.fackelAn && z.fackel > 0;
+  oeffneModal('Abzweigung ' + (stufe + 1) + ' von 3', hell ? 'Deine Flamme neigt sich deutlich nach ' + richtig + '. Dort zieht frische Luft.' : 'Es ist stockdunkel. Du spürst nur kalten Stein und musst raten.', wege.map(w => ({
+    text: w.charAt(0).toUpperCase() + w.slice(1),
+    klick: () => {
+      const brand = hell ? -6 : 0;
+      if (w === richtig) ergebnis('Weiter', 'Der Gang führt tiefer in den Berg.', { fackel: brand }, () => hoehleGang(p, stufe + 1));
+      else ergebnis('Sackgasse', 'Du tastest dich zurück. Etwas huscht über deine Füsse.', { mut: -12, zeit: 4, fackel: brand }, () => hoehleGang(p, stufe));
+    }
+  })));
+}
+
+const SYMBOLE = ['🔱', '🦉', '⚡', '🏹', '🌊', '🔥'];
+function ruineAktion(p) {
+  oeffneModal('Ruine', 'Auf einem Sockel liegen sechs Zeichen im Staub. Eine Stimme flüstert, du sollst dir die Reihenfolge merken, in der sie aufleuchten.', [
+    { text: 'Bereit', klick: () => ruinePruefung(p) },
+    { text: 'Später wiederkommen', klick: () => {} }
+  ]);
+}
+function ruinePruefung(p) {
+  const folge = mische(SYMBOLE).slice(0, 4);
+  const inhalt = oeffneModal('Merke dir die Reihenfolge', '', []);
+  inhalt.innerHTML = '<div id="blitz"></div>';
+  let i = 0;
+  const zeigen = () => {
+    if (i >= folge.length) { el('blitz').textContent = ''; eingabe2(); return; }
+    el('blitz').textContent = folge[i]; ton(440 + i * 110, 0.3, 'triangle', 0.08);
+    setTimeout(() => { el('blitz').textContent = ''; i++; setTimeout(zeigen, 250); }, 800);
+  };
+  setTimeout(zeigen, 600);
+  function eingabe2() {
+    el('modalTitel').textContent = 'Wiederhole die Reihenfolge';
+    inhalt.innerHTML = '<div class="folge" id="gewaehlt"></div><div class="symbole" id="symbolFeld"></div>';
+    let pos = 0;
+    mische(SYMBOLE).forEach(s => {
+      const b = document.createElement('button'); b.textContent = s;
+      b.addEventListener('click', () => {
+        if (s !== folge[pos]) { schliesseModal(); ergebnis('Falsch', 'Die Zeichen erlöschen. Der Staub wirbelt auf, und etwas flüstert höhnisch.', { mut: -10, zeit: 3 }, () => ruinePruefung(p)); return; }
+        pos++; el('gewaehlt').textContent += s;
+        if (pos === folge.length) setTimeout(() => { schliesseModal(); siegelErhalten(p, 'Die sechs Zeichen leuchten gemeinsam auf. Ein Siegel steigt aus dem Staub.'); }, 400);
+      });
+      el('symbolFeld').appendChild(b);
+    });
+  }
+}
+
+function gipfelAktion(p) {
+  oeffneModal('Der Gipfel', 'Das Siegel liegt auf einem Steinhaufen direkt an der Kante. Der Wind reisst an dir. Wie greifst du danach?', [
+    { text: 'Flach hinlegen und vorsichtig heranrobben', klick: () => ergebnis('Langsam, aber sicher', 'Es dauert, aber du erreichst das Siegel.', { zeit: 4, wasser: -5 }, () => siegelErhalten(p, 'Oben weht ein eisiger Wind. Das Siegel ist warm, als hätte es auf dich gewartet.')) },
+    { text: 'Schnell hingehen und zugreifen', klick: () => {
+      if (Math.random() < 0.45) ergebnis('Abgerutscht', 'Eine Böe erwischt dich. Du fängst dich im letzten Moment an einem Felsen.', { mut: -22 }, () => siegelErhalten(p, 'Mit zitternden Händen hebst du das Siegel auf.'));
+      else siegelErhalten(p, 'Ein Griff, und das Siegel gehört dir. Unter dir liegt die ganze Insel.');
+    } }
+  ]);
+}
+
+function torAktion() {
+  const anzahl = Object.values(z.siegel).filter(Boolean).length;
+  if (anzahl < 4) {
+    ergebnis('Das Tor des Orakels', 'Über dem Durchgang sitzen vier dunkle Kugeln. Du hast ' + anzahl + ' von 4 Siegeln. Das Tor bleibt verschlossen.');
+    return;
+  }
+  oeffneModal('Das Tor öffnet sich', 'Die vier Kugeln leuchten. Zwischen den Säulen flimmert goldenes Licht. Hinter dir hörst du Schritte, viele. Was tust du?', [
+    { text: 'Durch das Tor treten', klick: () => ende('sieg', 'tor') },
+    { text: 'Die Siegel zerbrechen, damit niemand folgt', klick: () => ende('sieg', 'zerbrochen') },
+    { text: 'Das Orakel um Rat fragen', klick: () => ende('sieg', 'orakel') }
+  ]);
+}
+
+/* ============================================================
+   Zufallsereignisse
+   ============================================================ */
+const AMBIENTE_TAG = ['Zikaden zirpen in der Hitze.', 'Salzige Luft weht vom Meer herüber.', 'Eine Eidechse huscht über einen warmen Stein.', 'Weit oben kreist ein Raubvogel.', 'Irgendwo plätschert Wasser.'];
+const AMBIENTE_NACHT = ['Irgendwo knackt ein Ast.', 'Der Wind trägt ein leises Summen herüber.', 'Deine Schritte klingen viel zu laut.', 'Im Gebüsch raschelt etwas und verstummt.', 'Die Sterne sind unnatürlich hell.'];
+
+const EREIGNISSE = {
+  wald: [
+    { titel: 'Knacken im Unterholz', text: 'Etwas Grosses bewegt sich zwischen den Bäumen. Es folgt dir, bleibt aber knapp ausser Sicht.', wahl: [
+      { text: 'Stehen bleiben und lauschen', folge: () => Math.random() < 0.5 ? { text: 'Nur ein Wildschwein. Es trottet davon.', mut: 4 } : { text: 'Ein Schatten huscht vorbei. Dein Herz hämmert.', mut: -10 } },
+      { text: 'Schnell weitergehen', folge: () => ({ text: 'Du lässt das Geräusch hinter dir, aber der Weg ist holprig.', zeit: 2 }) }] },
+    { titel: 'Wilde Feigen', text: 'Ein verwilderter Feigenbaum hängt voller reifer Früchte.', wahl: [
+      { text: 'Früchte pflücken', folge: () => Math.random() < 0.8 ? { text: 'Süss und saftig.', wasser: 10, mut: 3 } : { text: 'Wespen! Du rennst los.', mut: -5, wasser: -3 } },
+      { text: 'Vorbeigehen', folge: () => ({ text: 'Du gehst weiter.' }) }] },
+    { titel: 'Kalte Feuerstelle', text: 'Zwischen den Wurzeln liegt eine Feuerstelle, daneben steht ein Tonkrug.', wahl: [
+      { text: 'Krug öffnen', folge: () => Math.random() < 0.6 ? { text: 'Olivenöl. Es riecht noch frisch.', fackel: 20 } : { text: 'Leer, nur ein toter Skorpion.', mut: -4 } },
+      { text: 'Ignorieren', folge: () => ({ text: 'Du gehst weiter.' }) }] }
+  ],
+  wiese: [
+    { titel: 'Ziegenpfad', text: 'Ein schmaler Pfad schlängelt sich durch das trockene Gras.', wahl: [
+      { text: 'Dem Pfad folgen', folge: () => ({ text: 'Er führt zu einer schattigen Mulde. Kurz verschnaufen tut gut.', mut: 6, zeit: 2 }) },
+      { text: 'Quer durchs Gras', folge: () => ({ text: 'Die Disteln zerkratzen deine Beine.', mut: -3 }) }] },
+    { titel: 'Stille', text: 'Plötzlich verstummen alle Zikaden. Die Stille ist unheimlich.', wahl: [
+      { text: 'Warten', folge: () => Math.random() < 0.5 ? { text: 'Nach einer Weile zirpt es wieder.', mut: 2, zeit: 1 } : { text: 'Ein Schatten gleitet über die Wiese. Ein Vogel? Du bist nicht sicher.', mut: -8, zeit: 1 } },
+      { text: 'Schneller gehen', folge: () => ({ text: 'Du beschleunigst und merkst erst später, wie durstig du bist.', wasser: -5 }) }] },
+    { titel: 'Steinhaufen', text: 'Jemand hat flache Steine zu einem kleinen Turm gestapelt.', wahl: [
+      { text: 'Einen Stein dazulegen', folge: () => ({ text: 'Ein Gefühl von Ruhe breitet sich aus.', mut: 8 }) },
+      { text: 'Den Turm umstossen', folge: () => Math.random() < 0.5 ? { text: 'Darunter liegt ein vergrabener Beutel mit Öl.', fackel: 15 } : { text: 'Nichts. Du fühlst dich plötzlich beobachtet.', mut: -6 } }] }
+  ],
+  strand: [
+    { titel: 'Treibgut', text: 'Die Wellen haben Planken und Tonscherben angespült.', wahl: [
+      { text: 'Durchsuchen', folge: () => Math.random() < 0.5 ? { text: 'Eine verkorkte Flasche mit Süsswasser!', wasser: 14 } : { text: 'Nur Algen und Scherben. Du schneidest dich leicht.', mut: -4, zeit: 1 } },
+      { text: 'Weitergehen', folge: () => ({ text: 'Du gehst weiter.' }) }] },
+    { titel: 'Fussspuren', text: 'Im nassen Sand verlaufen Fussspuren. Sie sind frisch und enden mitten am Strand.', wahl: [
+      { text: 'Den Spuren folgen', folge: () => ({ text: 'Sie enden am Wasser. Etwas hat sie von dort aus verwischt.', mut: -8, zeit: 2 }) },
+      { text: 'Spuren ignorieren', folge: () => ({ text: 'Besser so. Du gehst in die andere Richtung.' }) }] }
+  ],
+  fels: [
+    { titel: 'Steinschlag', text: 'Über dir löst sich Geröll und rutscht auf dich zu.', wahl: [
+      { text: 'Zur Seite springen', folge: () => Math.random() < 0.65 ? { text: 'Knapp. Die Steine poltern vorbei.', mut: -4 } : { text: 'Ein Stein trifft dich am Bein.', mut: -12, zeit: 2 } },
+      { text: 'Nach vorne rennen', folge: () => Math.random() < 0.4 ? { text: 'Geschafft.' } : { text: 'Zu langsam. Du stolperst.', mut: -14, zeit: 2 } }] },
+    { titel: 'Feuchter Spalt', text: 'In einer Felsspalte glänzt Feuchtigkeit.', wahl: [
+      { text: 'Trinken', folge: () => Math.random() < 0.7 ? { text: 'Kühles, klares Wasser.', wasser: 15 } : { text: 'Brackig. Dir wird übel.', wasser: -5, mut: -4 } }] }
+  ],
+  nacht: [
+    { titel: 'Flüstern', text: 'Aus dem Dunkel hörst du deinen Namen, ganz leise.', wahl: [
+      { text: 'Antworten', folge: () => ({ text: 'Stille. Dann Gelächter, weit weg.', mut: -14 }) },
+      { text: 'Ohren zuhalten und gehen', folge: () => ({ text: 'Es verklingt. Du zitterst.', mut: -4, zeit: 1 }) }] },
+    { titel: 'Irrlichter', text: 'Blaue Lichter tanzen zwischen den Bäumen.', wahl: [
+      { text: 'Folgen', folge: () => Math.random() < 0.5 ? { text: 'Sie führen dich zu einem Lagerplatz mit etwas Öl.', fackel: 20, mut: 4 } : { text: 'Sie führen dich im Kreis. Du verlierst Zeit.', zeit: 6, mut: -8 } },
+      { text: 'Wegschauen', folge: () => ({ text: 'Du zwingst dich weiterzugehen.', mut: -2 }) }] },
+    { titel: 'Rote Punkte', text: 'Zwei rote Punkte glimmen am Rand der Dunkelheit. Sie bewegen sich nicht.', wahl: [
+      { text: 'Fackel hochhalten', folge: () => ({ text: 'Die Augen verschwinden. Du atmest aus.', fackel: -6, mut: 3 }) },
+      { text: 'Langsam rückwärts gehen', folge: () => ({ text: 'Schritt um Schritt gehst du zurück, ohne sie aus den Augen zu lassen.', mut: -6, zeit: 2 }) }] }
+  ]
+};
+
+function zufallsEreignis() {
+  const h = hoeheBei(z.x, z.z), s = steigungAus(W.hoehe, z.x, z.z), w = rasterWert(W.wald, z.x, z.z);
+  let pool;
+  if (istNacht() && Math.random() < 0.55) pool = EREIGNISSE.nacht;
+  else if (h < 1.8) pool = EREIGNISSE.strand;
+  else if (s > 0.45 || h > 16) pool = EREIGNISSE.fels;
+  else pool = w > 0.55 ? EREIGNISSE.wald : EREIGNISSE.wiese;
+  const ev = zufallswahl(pool);
+  oeffneModal(ev.titel, ev.text, ev.wahl.map(wa => ({ text: wa.text, klick: () => { const f = wa.folge(); ergebnis(ev.titel, f.text, f); } })));
+}
+
+/* ============================================================
+   Ende und Menüs
+   ============================================================ */
+function ende(art, variante) {
+  z.vorbei = true;
+  schliesseModal();
+  eingabeZuruecksetzen();
+  try { localStorage.removeItem(SPEICHER); } catch (e) { /* egal */ }
+  let titel, text;
+  if (art === 'sieg') {
+    titel = 'Du hast es geschafft';
+    text = {
+      tor: 'Du trittst durch das Licht. Als sich das Tor schliesst, bleibt die Insel mit all ihren Schatten zurück. Vor dir liegt ein ruhiges Meer und ein Boot, das auf dich wartet.',
+      zerbrochen: 'Die Siegel springen in Stücke, und die Schatten verstummen. Das Tor bleibt offen, aber niemand folgt dir mehr. Du gehst allein ins Licht.',
+      orakel: 'Aus dem Licht spricht eine Stimme, die klingt wie deine eigene. Sie sagt dir einen einzigen Satz, und du weisst, dass du ihn nie vergessen wirst.'
+    }[variante];
+    siegelTon();
+  } else if (art === 'sturm') {
+    titel = 'Der Sturm';
+    text = 'Der Himmel wird schwarz, Wellen schlagen über die Insel. Das Tor bleibt für dich verschlossen. Beim nächsten Mal musst du schneller sein.';
+  } else {
+    titel = 'Die Nerven verloren';
+    text = z.wasser <= 0 ? 'Ohne Wasser tragen dich deine Beine nicht mehr. Die Insel behält dich.' : 'Deine Hände zittern, deine Beine tragen dich nicht mehr. Die Dunkelheit schliesst sich um dich.';
+  }
+  const siegel = Object.values(z.siegel).filter(Boolean).length;
+  el('endeTitel').textContent = titel;
+  el('endeText').textContent = text;
+  el('endeWerte').textContent = 'Erreicht: ' + uhrText() + '. Siegel: ' + siegel + ' von 4. Insel Nummer ' + z.seed + '.';
+  el('ende').hidden = false;
+  el('hud').hidden = true;
+}
+
+function zumTitel() {
+  if (z) z.imSpiel = false;
+  el('hud').hidden = true; el('ende').hidden = true;
+  el('titel').hidden = false; el('titel').style.display = '';
+  pruefeSpeicher();
+}
+function pruefeSpeicher() {
+  try { el('knopfWeiter').hidden = !localStorage.getItem(SPEICHER); } catch (e) { el('knopfWeiter').hidden = true; }
+}
+
+const neueNummer = () => Math.floor(Math.random() * 1000000);
+el('knopfNeu').addEventListener('click', () => { audioStarten(); neuesSpiel(neueNummer()); });
+el('knopfWeiter').addEventListener('click', () => { audioStarten(); if (!laden()) neuesSpiel(neueNummer()); });
+el('knopfNochmal').addEventListener('click', () => { const s = z.seed; neuesSpiel(s); });
+el('knopfAndere').addEventListener('click', () => neuesSpiel(neueNummer()));
+
+/* ============================================================
+   Hauptschleife
+   ============================================================ */
+let letzte = performance.now();
+function schleife(jetzt) {
+  requestAnimationFrame(schleife);
+  const dt = Math.min(0.05, (jetzt - letzte) / 1000 || 0);
+  letzte = jetzt;
+  const t = jetzt / 1000;
+  if (z && z.imSpiel && !pausiert()) aktualisiereSpiel(dt);
+  if (z && z.imSpiel) spielerKamera(); else titelKamera(dt);
+  const flackern = 0.88 + Math.sin(t * 13) * 0.08 + Math.sin(t * 31) * 0.05;
+  if (z && z.imSpiel) setzeLicht(uhrzeit(), glatt(20, 0, STURM_STUNDE - z.stunde), z.fackelAn && z.fackel > 0, flackern);
+  else { setzeLicht(17.2, 0, false, 1); mondScheibe.visible = false; szene.fog.near = 90; szene.fog.far = 430; }
+  animiere(dt, t);
+  renderer.render(szene, kamera);
+  if (z && z.imSpiel && !z.vorbei) hudBild(dt);
+}
+
+function groesse() {
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  kamera.aspect = window.innerWidth / window.innerHeight;
+  kamera.updateProjectionMatrix();
+}
+window.addEventListener('resize', groesse);
+window.addEventListener('orientationchange', () => setTimeout(groesse, 300));
+document.addEventListener('visibilitychange', () => { eingabeZuruecksetzen(); speichere(); if (document.hidden && z && z.imSpiel && !z.vorbei && !z.modalOffen) menueOeffnen(); });
+window.addEventListener('pagehide', speichere);
+setInterval(speichere, 5000);
+['gesturestart', 'gesturechange', 'gestureend'].forEach(n => document.addEventListener(n, e => e.preventDefault()));
+document.addEventListener('pointerdown', () => { if (audio && audio.state !== 'running') audio.resume(); });
+
+// Titelbild: eine Insel im Hintergrund
+try {
+  let titelSeed = neueNummer();
+  try { const s = JSON.parse(localStorage.getItem(SPEICHER) || 'null'); if (s) titelSeed = s.seed; } catch (e) { /* egal */ }
+  baueWelt(erzeugeDaten(titelSeed));
+  W.schatten = [];
+} catch (e) { console.error(e); }
+pruefeSpeicher();
+groesse();
+requestAnimationFrame(schleife);
+el('laden').remove();
+
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+// Für Tests
+window.__spiel = { neuesSpiel, ende, zeitVergeht, get z() { return z; }, get W() { return W; }, ortBetreten, menueOeffnen, fackelUmschalten };
+</script>
+</body>
+</html>
